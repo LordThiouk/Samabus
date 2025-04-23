@@ -1,0 +1,164 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Setup Project Architecture and Authentication",
+      "description": "Initialize the Flutter project with Supabase integration and implement user authentication for all three roles (client, gestionnaire, admin).",
+      "status": "pending",
+      "dependencies": [],
+      "priority": "high",
+      "details": "Create a new Flutter project with proper folder structure. Integrate Supabase SDK for authentication. Implement sign-up and login screens with role selection. Configure Supabase authentication rules for the three user roles (client, gestionnaire, admin). Set up navigation flows based on user roles. Create user profile models and database tables in Supabase.",
+      "testStrategy": "Test user registration, login, and logout flows for each role. Verify proper role-based redirections. Test authentication persistence across app restarts.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Initialize Flutter Project with Supabase SDK and Folder Structure",
+          "description": "Set up a new Flutter project with proper architecture, integrate Supabase SDK, and establish the folder structure following best practices for scalability and maintainability.",
+          "dependencies": [],
+          "details": "1. Create a new Flutter project using `flutter create --org com.yourcompany app_name`\n2. Configure project dependencies in pubspec.yaml:\n   - Add supabase_flutter package\n   - Add other essential packages (flutter_bloc or provider for state management, go_router for navigation)\n3. Set up the folder structure:\n   - lib/core/ (for constants, themes, utils, etc.)\n   - lib/data/ (for repositories, data sources, models)\n   - lib/domain/ (for business logic, entities)\n   - lib/presentation/ (for UI components, screens, widgets)\n   - lib/services/ (for API services, local storage)\n4. Create environment configuration files for different environments (dev, prod)\n5. Initialize Supabase client in main.dart with proper configuration\n6. Test the connection to Supabase by making a simple query\n7. Set up a basic theme and application entry point",
+          "status": "done",
+          "parentTaskId": 1
+        },
+        {
+          "id": 2,
+          "title": "Create Supabase Database Schema and User Models",
+          "description": "Design and implement the database schema in Supabase, including user tables with role definitions and necessary relationships for the three user types.",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Access Supabase dashboard and create the following tables:\n   - users (id, email, created_at, role, profile_data)\n   - profiles (user_id, name, avatar_url, role_specific_fields)\n   - role_permissions (role_id, permission_name, access_level)\n2. Set up Row Level Security (RLS) policies for each table\n3. Create appropriate indexes for performance\n4. Implement Dart models corresponding to database tables:\n   - Create BaseUser class\n   - Extend for ClientUser, GestionnaireUser, and AdminUser with role-specific properties\n   - Implement fromJson/toJson methods for serialization\n5. Create a UserRepository class to handle CRUD operations\n6. Set up database triggers or functions for user creation events\n7. Test the models by manually creating test users in each role\n8. Verify RLS policies are working correctly with different user roles",
+          "status": "done",
+          "parentTaskId": 1
+        },
+        {
+          "id": 3,
+          "title": "Implement Authentication UI and Role-Based Navigation",
+          "description": "Create the authentication screens (login, signup, password reset) with role selection, implement the authentication logic, and set up role-based navigation flows.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "1. Create reusable UI components for authentication:\n   - Custom text fields with validation\n   - Authentication buttons\n   - Error message displays\n2. Implement the following screens:\n   - Login screen with email/password fields\n   - Signup screen with role selection dropdown\n   - Password reset screen\n   - Email verification screen\n3. Create an AuthService class to handle:\n   - User registration with role assignment\n   - Login functionality\n   - Password reset\n   - Session management\n4. Implement role-based navigation:\n   - Create a navigation service or router configuration\n   - Define separate navigation stacks for each user role\n   - Implement guards/middleware to prevent unauthorized access\n5. Add state management for authentication:\n   - Create AuthState class (loading, authenticated, unauthenticated, error)\n   - Implement persistence of auth state using secure storage\n6. Test the complete authentication flow:\n   - New user registration with each role\n   - Login with existing credentials\n   - Password reset functionality\n   - Proper redirection based on user role\n7. Implement logout functionality and session expiration handling",
+          "status": "in-progress",
+          "parentTaskId": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Bus and Route Management for Transporters",
+      "description": "Implement the interface for bus owners to register and manage their bus fleet and create/edit routes.",
+      "status": "pending",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "Create database schemas for buses (name, capacity, type) and routes (departure city, arrival city, date, time, price). Build UI for transporters to add, edit, and delete buses. Implement route creation with form validation. Design a calendar view for scheduling routes. Add functionality to set pricing and available seats. Implement CRUD operations with Supabase for bus and route management.",
+      "testStrategy": "Test adding, editing, and deleting buses and routes. Verify data persistence in Supabase. Test form validations and error handling. Ensure proper relationship between buses and routes."
+    },
+    {
+      "id": 3,
+      "title": "Trip Search and Display for Clients",
+      "description": "Develop the search functionality allowing clients to find available trips based on departure city, destination, and date.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "Create a search form with city selection and date picker. Implement Supabase queries to filter available routes. Design and implement the results list showing trip details (departure/arrival cities, times, price, available seats). Add sorting options (by price, time). Implement pagination for search results. Create detailed trip view with all relevant information.",
+      "testStrategy": "Test search functionality with various criteria. Verify correct filtering of results. Test edge cases like no results found. Verify that only available trips are displayed. Test pagination and sorting functionality."
+    },
+    {
+      "id": 4,
+      "title": "Booking and Passenger Information System",
+      "description": "Implement the booking flow allowing clients to select seats and enter passenger information including mandatory ID card numbers.",
+      "status": "pending",
+      "dependencies": [
+        3
+      ],
+      "priority": "high",
+      "details": "Create booking flow UI with seat selection. Implement passenger information form with validation (name and ID card number required for each passenger). Design database schema for bookings and passengers. Implement logic to handle multiple passengers per booking. Create booking summary screen. Ensure proper validation of ID card numbers. Implement temporary reservation holding during the booking process.",
+      "testStrategy": "Test booking flow with single and multiple passengers. Verify form validation for required fields. Test seat selection and availability updates. Verify proper storage of passenger details including ID numbers."
+    },
+    {
+      "id": 5,
+      "title": "Payment Integration",
+      "description": "Integrate payment processing with PayDunya or CinetPay to handle ticket purchases and implement the 5% commission model.",
+      "status": "pending",
+      "dependencies": [
+        4
+      ],
+      "priority": "high",
+      "details": "Integrate PayDunya or CinetPay SDK. Implement payment flow UI. Create payment processing service. Configure commission calculation (5% platform fee). Implement payment status tracking and receipt generation. Handle payment callbacks and error scenarios. Create database schema for payment records. Implement logic to track transporter payouts (95% of ticket price).",
+      "testStrategy": "Test payment flow with test credentials. Verify correct commission calculations. Test payment success and failure scenarios. Verify proper recording of payment transactions in database. Test receipt generation."
+    },
+    {
+      "id": 6,
+      "title": "Ticket Generation with QR Codes",
+      "description": "Implement ticket generation with QR codes and store ID card information for validation.",
+      "status": "pending",
+      "dependencies": [
+        5
+      ],
+      "priority": "high",
+      "details": "Design ticket data structure with unique identifiers. Implement QR code generation containing ticket information. Create ticket UI display with all relevant trip and passenger details. Store ticket information in database with relationship to booking and payment. Implement ticket retrieval for the client's booking history. Ensure QR codes contain necessary validation data while maintaining security.",
+      "testStrategy": "Test QR code generation and readability. Verify ticket information accuracy. Test ticket retrieval from booking history. Ensure all passenger details are correctly included in the ticket."
+    },
+    {
+      "id": 7,
+      "title": "Offline Ticket Validation System",
+      "description": "Develop the offline ticket validation system for transporters to scan QR codes or validate by ID card number without internet connection.",
+      "status": "pending",
+      "dependencies": [
+        6
+      ],
+      "priority": "medium",
+      "details": "Integrate qr_code_scanner Flutter plugin. Implement QR code scanning UI for transporters. Create local database using Hive/SQLite for offline storage of ticket data. Implement synchronization mechanism to download relevant ticket data for offline use. Build ID card number lookup functionality as alternative validation method. Create validation result UI with clear indicators for valid/invalid tickets. Implement background synchronization when internet connection is restored.",
+      "testStrategy": "Test QR code scanning in various lighting conditions. Verify offline validation works without internet connection. Test ID card number validation. Verify data synchronization when connection is restored. Test validation with valid and invalid tickets."
+    },
+    {
+      "id": 8,
+      "title": "Transporter Dashboard",
+      "description": "Create a dashboard for bus owners to track reservations, view sales data, and manage their business.",
+      "status": "pending",
+      "dependencies": [
+        5,
+        7
+      ],
+      "priority": "medium",
+      "details": "Design and implement dashboard UI with key metrics (total sales, upcoming trips, seat occupancy). Create reservation management screen showing bookings by trip. Implement trip status management (scheduled, in progress, completed). Build simple analytics charts for sales and occupancy trends. Create revenue reports with commission breakdowns. Implement filtering and date range selection for reports.",
+      "testStrategy": "Test dashboard data accuracy against database records. Verify filtering and date range functionality. Test reservation management features. Ensure proper calculation of business metrics and commission breakdowns."
+    },
+    {
+      "id": 9,
+      "title": "Admin Platform Management",
+      "description": "Implement the admin interface for platform management, user oversight, and business analytics.",
+      "status": "pending",
+      "dependencies": [
+        8
+      ],
+      "priority": "low",
+      "details": "Create admin dashboard UI with platform-wide metrics. Implement user management for clients and transporters (view, edit, disable accounts). Build commission tracking and reporting. Create route popularity analytics by city/region. Implement system for managing transporters onboarding. Design and implement admin notification system for important platform events. Create data export functionality for reports.",
+      "testStrategy": "Test admin access controls and permissions. Verify user management functionality. Test analytics calculations against known data. Verify commission reporting accuracy. Test data export functionality."
+    },
+    {
+      "id": 10,
+      "title": "Booking History and User Profiles",
+      "description": "Implement booking history for clients and complete the user profile management functionality for all roles.",
+      "status": "pending",
+      "dependencies": [
+        6,
+        8
+      ],
+      "priority": "medium",
+      "details": "Create booking history UI for clients showing past and upcoming trips. Implement ticket retrieval from history. Build user profile screens for all roles with appropriate fields. Create settings screens for notification preferences, language, etc. Implement profile picture upload and management. Add functionality to update personal information and change password. For clients, implement trip rating and feedback system after completion.",
+      "testStrategy": "Test booking history retrieval and display. Verify ticket access from history. Test profile updates and settings changes. Ensure proper storage of user preferences. Test profile picture upload and display."
+    }
+  ],
+  "metadata": {
+    "projectName": "Plateforme de Réservation de Bus (MVP)",
+    "totalTasks": 10,
+    "sourceFile": "Bus Reservation Platform PRD",
+    "generatedAt": "2023-11-10"
+  }
+}

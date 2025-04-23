@@ -1,0 +1,39 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+flowchart TD
+    Start[Start]
+    Start --> Auth[Login Signup]
+    Auth --> RoleChoice[Select Role]
+    RoleChoice --> Traveler[Traveler]
+    RoleChoice --> Transporter[Transporter]
+    RoleChoice --> Admin[Administrator]
+    
+    Traveler --> TSearch[Search Trips]
+    TSearch --> TResults[View Available Trips]
+    TResults --> TSelect[Select Trip]
+    TSelect --> TSeats[Choose Seats]
+    TSeats --> TInfo[Enter Passenger Info]
+    TInfo --> TPayment[Payment Integration]
+    TPayment --> TConfirm[Confirmation Ticket QR]
+    TConfirm --> THistory[Booking History]
+    
+    Transporter --> TReg[Registration]
+    TReg --> TApproval[Await Admin Approval]
+    TApproval --> TDashboard[Transporter Dashboard]
+    TDashboard --> TAddBus[Add Bus Details]
+    TAddBus --> TCreateTrip[Create Trip]
+    TCreateTrip --> TReservations[View Reservations]
+    TReservations --> TValidate[Validate Ticket Offline]
+    TValidate --> TSync[Sync Offline Data]
+    
+    Admin --> ALogin[Login]
+    ALogin --> ADashboard[Admin Dashboard]
+    ADashboard --> AManageUsers[Manage Users]
+    AManageUsers --> AApproveTrans[Approve Transporters]
+    ADashboard --> AReports[View Reports Settings]
+    ADashboard --> AFinAdjust[Financial Adjustments]

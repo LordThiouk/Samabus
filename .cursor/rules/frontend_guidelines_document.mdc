@@ -1,0 +1,173 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Frontend Guideline Document
+
+## 1. Frontend Architecture
+
+**Overview** We’re building a single codebase in Flutter that runs on Android, iOS, and the web. Flutter gives us fast UI rendering and a rich set of widgets out of the box. We’ll use the following major pieces:
+
+*   **Flutter & Flutter Web**: One codebase, same look and feel everywhere.
+
+*   **Supabase**: Handles authentication, database (PostgreSQL), REST APIs, and file storage.
+
+*   **Local Storage**: Hive or SQLite for offline support (storing scanned tickets and user data up to 24 hours).
+
+*   **Plugins & Packages**:
+
+    *   `qr_code_scanner` for scanning QR codes.
+    *   Payment SDKs (PayDunya, CinetPay).
+    *   Localization packages (flutter_localizations, intl).
+    *   State management (Riverpod or Provider).
+
+**Scalability & Maintainability**
+
+*   **Modular code**: We group features by folder (e.g., `/auth`, `/booking`, `/dashboard`).
+*   **Clean separation**: UI widgets, business logic, and data layers are in different files.
+*   **Reusable components**: Common widgets (buttons, form fields, dialogs) live in a shared folder.
+
+**Performance**
+
+*   Flutter’s widget tree is optimized for fast redraws.
+*   Local caching (Hive/SQLite) reduces network calls.
+*   Code splitting on web (deferred components) to load only what users need.
+
+## 2. Design Principles
+
+1.  **Usability**: Clear calls to action, straightforward flows for booking and scanning tickets. We keep steps to a minimum.
+2.  **Accessibility**: Support for screen readers, proper contrast ratios (WCAG AA), and large tap targets.
+3.  **Responsiveness**: UI adapts to phones, tablets, and desktop browsers. We use Flutter’s `LayoutBuilder` and responsive widgets.
+4.  **Data Privacy**: Users see clear notices about how their CNI and personal info are used. Data auto-deletes 30 days after travel.
+5.  **Offline-First**: The ticket validation flow works without internet for up to 24 hours and syncs automatically when back online.
+6.  **Consistency**: Uniform spacing, typography, and color usage across all screens.
+
+## 3. Styling and Theming
+
+**Approach**
+
+*   We use Flutter’s theming system combined with Material Design principles for a modern look.
+*   A single `AppTheme` class defines colors, text styles, and component themes.
+
+**Style Flavor**
+
+*   Modern flat design with subtle shadows for depth.
+*   Occasional glassmorphism touches on cards or modals for a premium feel.
+
+**Color Palette**
+
+*   Primary: #0057E7 (Deep Blue)
+*   Secondary: #FF9800 (Vibrant Orange)
+*   Accent: #4CAF50 (Green for success states)
+*   Background: #F5F5F5 (Light Gray)
+*   Surface: #FFFFFF (White)
+*   Error: #D32F2F (Red)
+*   Text Primary: #212121 (Dark Gray)
+*   Text Secondary: #757575 (Medium Gray)
+
+**Typography**
+
+*   Font: Roboto (Google Fonts) across all platforms.
+*   Headings: `Roboto Bold`, sizes 24–32 sp.
+*   Body: `Roboto Regular`, sizes 14–16 sp.
+*   Buttons: `Roboto Medium`, size 14 sp.
+
+## 4. Component Structure
+
+**Organization**
+
+`/lib /components → Shared UI widgets (buttons, inputs) /features /auth → Login, signup, verification /booking → Search, seat selector, payment /tickets → E‑ticket display, QR scan /dashboard → Owner and admin screens /services → API clients, local storage helpers /state → Providers or notifiers /utils → Helpers, constants, extensions main.dart`
+
+**Why Component-Based?**
+
+*   **Reusability**: Build once, use everywhere (e.g., a custom button).
+*   **Maintainability**: Changes in one place reflect across the app.
+*   **Testability**: Smaller widgets are easier to test.
+
+## 5. State Management
+
+**Approach**
+
+*   We use **Riverpod** (or **Provider** if you prefer) for:
+
+    *   Global auth state.
+    *   Booking flow data (selected seats, passenger info).
+    *   Offline queue of scanned tickets.
+
+**How It Works**
+
+*   **Providers** expose pieces of state (e.g., `AuthProvider`, `BookingProvider`).
+*   Widgets subscribe to providers and rebuild only when needed.
+*   Services (Supabase client, local storage) are injected into providers, keeping UI code clean.
+
+## 6. Routing and Navigation
+
+**Library**
+
+*   **go_router** for Flutter, which works seamlessly on mobile and web.
+
+**Structure**
+
+*   `/` → Splash or Login (if not authenticated).
+*   `/home` → Traveler home screen.
+*   `/search` → Trip search.
+*   `/booking` → Seat selection & payment.
+*   `/tickets` → E‑ticket display.
+*   `/scan` → QR/CNI scanner (offline capable).
+*   `/dashboard/...` → Owner/admin panels.
+
+**Deep Links & Web**
+
+*   Bookable links (e.g., `/search?from=CityA&to=CityB&date=2024-07-01`).
+*   URL reflects current page for easy sharing and bookmarking.
+
+## 7. Performance Optimization
+
+1.  **Lazy Loading**: Load heavy screens (dashboard, analytics) only when accessed.
+2.  **Code Splitting** (web): Defer less-used modules to speed up initial load.
+3.  **Asset Optimization**: Compressed images, SVGs for icons, and caching network images.
+4.  **List Virtualization**: Use `ListView.builder` and `SliverList` for large lists.
+5.  **Avoid Overbuild**: Limit rebuilds by scoping providers closely to widgets.
+6.  **Release Builds**: Enable tree shaking, minification, and proguard for smaller binaries.
+
+## 8. Testing and Quality Assurance
+
+**Unit Tests**
+
+*   Test business logic in providers and services with `flutter_test` + `mockito`.
+
+**Widget Tests**
+
+*   Verify UI components render correctly under different states.
+*   Test form validation, button states, and navigation triggers.
+
+**Integration / E2E Tests**
+
+*   Use `integration_test` or `flutter_driver` to simulate real user flows:
+
+    *   Sign up / Login.
+    *   Search, book, and pay.
+    *   Offline QR scanning and sync.
+
+**CI Pipeline**
+
+*   On every PR: run lint, static analysis (`flutter analyze`), and test suite.
+*   Use GitHub Actions or Codemagic for automated builds and test runs.
+
+## 9. Conclusion and Overall Frontend Summary
+
+This guideline lays out how we build a fast, reliable, and user-friendly bus booking app’s frontend. We’re using Flutter’s single codebase approach to reach mobile and web users seamlessly. Our design principles—usability, accessibility, responsiveness, and data privacy—ensure travelers and bus owners have a smooth experience.
+
+Key strengths:
+
+*   **Modular code** for easy scaling and maintenance.
+*   **Offline-first** ticket validation with local storage.
+*   **Robust testing** to catch issues early.
+*   **Clean, modern UI** backed by a solid theming system.
+
+Following these guidelines will help new team members ramp up quickly and keep the codebase healthy as we add more features in future phases. If any new frontend requirements pop up, we’ll extend this document under the relevant section.
+
+Happy coding!

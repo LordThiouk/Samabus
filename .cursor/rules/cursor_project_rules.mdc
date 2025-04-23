@@ -1,0 +1,133 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+## Project Overview
+
+* **Type:** Mobile & Web Platform MVP
+* **Description:** Develop a mobile and web platform for booking intercity bus tickets, targeting both travelers and bus operators.
+* **Primary Goal:** Provide search, booking, payment, QR e‑ticketing, offline validation, and an admin panel for management and analytics.
+
+## Project Structure
+
+### Framework-Specific Routing
+
+* **Directory Rules:**
+    * lib/                         : Flutter entry point
+    * lib/routes/app_router.dart   : Navigator 2.0 setup (e.g., GoRouter/AutoRoute)
+    * lib/screens/[flow]/[screen].dart : Screen per feature flow
+    * lib/widgets/[component].dart     : Reusable UI components
+    * web/                         : Flutter web build assets
+
+### Core Directories
+
+* **Versioned Structure:**
+    * lib/api            : Supabase service wrappers
+    * lib/models         : Data models (Passenger, Trip, Booking, Operator)
+    * lib/repositories   : Data access (Supabase, Hive, SQLite)
+    * lib/services       : Payment, QR, Notification services
+    * lib/state          : State management (Riverpod/Bloc)
+    * lib/utils          : Helpers (date conversions, localization)
+    * assets/            : Images, fonts, ARB localization files
+
+### Key Files
+
+* pubspec.yaml                      : Dependencies & asset configuration
+* lib/main.dart                     : App entrypoint (Init Supabase, Hive)
+* lib/routes/app_router.dart        : All route definitions
+* lib/services/payment_service.dart : PayDunya & CinetPay integration
+* lib/services/qrcode_service.dart  : QR code generation & scanning
+* lib/services/notification_service.dart : Email/SMS/Push logic
+* lib/utils/constants.dart          : App constants (roles, URLs)
+
+## Tech Stack Rules
+
+* Flutter@3.x         : Enforce sound null safety; use build_runner for codegen
+* Supabase@1.x        : Auth via GoTrue; migrations via supabase CLI
+* Hive@2.0            : Offline caching & QR validations; versioned TypeAdapters
+* sqflite@2.0         : For relational queries beyond Hive’s scope; migration scripts
+* qr_code_scanner@0.7 : Camera permissions & widget-based scanning
+* paydunya_sdk@latest : Wrapped in PaymentService with retry/backoff
+* cinetpay_sdk@latest : Idempotency keys & webhook signature validation
+
+## PRD Compliance
+
+* "Passenger CNI and personal data stored for 30 days post-trip, GDPR compliance required": Encrypt CNI fields at rest and auto‑purge after 30 days.
+* "Offline Scanning: App should function offline for up to 24 hours": Cache scans in Hive; sync on reconnect.
+* "Admin Approval: Bus operator accounts require admin review/approval": Block operator UIs until `approved == true`.
+
+## App Flow Integration
+
+* Traveler Auth Flow → lib/screens/auth/sign_in_screen.dart uses AuthService.signIn()
+* Trip Search Flow → lib/screens/traveler/search/search_screen.dart uses TripRepository.searchTrips()
+* Booking Flow → lib/screens/traveler/booking/booking_screen.dart invokes PaymentService.processPayment()
+* E‑Ticket Flow → lib/services/qrcode_service.dart + lib/screens/traveler/ticket/ticket_screen.dart
+* Offline Validation → lib/screens/operator/scan_screen.dart reads cached tickets from Hive
+* Admin Dashboard → lib/screens/admin/dashboard/dashboard_screen.dart uses StatisticsRepository
+
+## Best Practices
+
+* Flutter
+    * Use Riverpod for state management and testability.
+    * Organize by feature: screens/, widgets/, services/, models/.
+    * Leverage codegen (freezed, json_serializable) for immutable models.
+
+* Supabase
+    * Enforce row‑level security for RBAC.
+    * Version migrations in a `supabase/migrations/` folder.
+    * Use realtime subscriptions for live booking updates.
+
+* Hive
+    * Register TypeAdapters on app init.
+    * Encrypt boxes storing CNI data.
+    * Batch writes in transactions when syncing.
+
+* SQLite (sqflite)
+    * Define DAO classes for complex queries.
+    * Use a versioned migration strategy in lib/db/migrations/.
+    * Properly close DB in app lifecycle hooks.
+
+* Payment Gateways (PayDunya & CinetPay)
+    * Abstract SDK calls behind a unified PaymentService.
+    * Implement retry with exponential backoff.
+    * Validate and log webhook signatures.
+
+* QR Code Scanner
+    * Handle camera permission denials gracefully.
+    * Debounce scan events to avoid duplicates.
+    * Validate scanned payload against expected schema.
+
+* Localization (intl)
+    * Use ARB files; generate code with intl_utils.
+    * Support dynamic locale switching.
+    * Provide English fallback.
+
+## Rules
+
+* Derive folder/file patterns directly from Flutter best practices.
+* Use Navigator 2.0 (GoRouter or AutoRoute) for all navigation flows.
+* Never mix Hive and SQLite for the same data entity.
+* Enforce box encryption for any storage of CNI or personal data.
+* Apply Supabase schema changes only via CLI migrations; no inline SQL.
+
+## Rules Metrics
+
+Before starting the project development, create a metrics file in the root of the project called
+
+`cursor_metrics.md`.
+
+### Instructions:
+
+* Each time a cursor rule is used as context, update `cursor_metrics.md`.
+* Use the following format for `cursor_metrics.md`:
+
+  # Rules Metrics
+  ## Usage
+  The number of times rules is used as context
+
+  * rule-name.mdc: 5
+  * another-rule.mdc: 2
+  * ...other rules

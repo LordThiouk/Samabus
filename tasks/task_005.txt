@@ -1,0 +1,11 @@
+# Task ID: 5
+# Title: Payment Integration
+# Status: pending
+# Dependencies: 4
+# Priority: high
+# Description: Integrate payment processing with PayDunya or CinetPay to handle ticket purchases and implement the 5% commission model.
+# Details:
+Integrate PayDunya or CinetPay SDK. Implement payment flow UI. Create payment processing service. Configure commission calculation (5% platform fee). Implement payment status tracking and receipt generation. Handle payment callbacks and error scenarios. Create database schema for payment records. Implement logic to track transporter payouts (95% of ticket price).
+
+# Test Strategy:
+Test payment flow with test credentials. Verify correct commission calculations. Test payment success and failure scenarios. Verify proper recording of payment transactions in database. Test receipt generation.

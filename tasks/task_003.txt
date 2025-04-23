@@ -1,0 +1,11 @@
+# Task ID: 3
+# Title: Trip Search and Display for Clients
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Develop the search functionality allowing clients to find available trips based on departure city, destination, and date.
+# Details:
+Create a search form with city selection and date picker. Implement Supabase queries to filter available routes. Design and implement the results list showing trip details (departure/arrival cities, times, price, available seats). Add sorting options (by price, time). Implement pagination for search results. Create detailed trip view with all relevant information.
+
+# Test Strategy:
+Test search functionality with various criteria. Verify correct filtering of results. Test edge cases like no results found. Verify that only available trips are displayed. Test pagination and sorting functionality.

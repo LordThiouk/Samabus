@@ -1,0 +1,11 @@
+# Task ID: 10
+# Title: Booking History and User Profiles
+# Status: pending
+# Dependencies: 6, 8
+# Priority: medium
+# Description: Implement booking history for clients and complete the user profile management functionality for all roles.
+# Details:
+Create booking history UI for clients showing past and upcoming trips. Implement ticket retrieval from history. Build user profile screens for all roles with appropriate fields. Create settings screens for notification preferences, language, etc. Implement profile picture upload and management. Add functionality to update personal information and change password. For clients, implement trip rating and feedback system after completion.
+
+# Test Strategy:
+Test booking history retrieval and display. Verify ticket access from history. Test profile updates and settings changes. Ensure proper storage of user preferences. Test profile picture upload and display.

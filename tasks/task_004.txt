@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: Booking and Passenger Information System
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Implement the booking flow allowing clients to select seats and enter passenger information including mandatory ID card numbers.
+# Details:
+Create booking flow UI with seat selection. Implement passenger information form with validation (name and ID card number required for each passenger). Design database schema for bookings and passengers. Implement logic to handle multiple passengers per booking. Create booking summary screen. Ensure proper validation of ID card numbers. Implement temporary reservation holding during the booking process.
+
+# Test Strategy:
+Test booking flow with single and multiple passengers. Verify form validation for required fields. Test seat selection and availability updates. Verify proper storage of passenger details including ID numbers.

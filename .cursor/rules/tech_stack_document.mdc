@@ -1,0 +1,105 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Tech Stack Document
+
+This document explains in simple terms the technologies we chose to build our intercity bus booking platform. It covers the tools and services used on the frontend and backend, how we host and deploy the app, the third‑party integrations we rely on, and our security and performance approaches.
+
+## 1. Frontend Technologies
+
+These are the tools and frameworks that make up the parts of the app you interact with directly (mobile and web):
+
+- **Flutter**: A single framework to build both Android and iOS apps from the same code.
+- **Flutter Web**: Lets us reuse that same Flutter code to publish a website, so the look and feel stay consistent everywhere.
+- **qr_code_scanner (Flutter plugin)**: A ready‑made component we plug in to let bus operators scan QR codes fast and reliably.
+- **Styling and Layout**: We use Flutter’s built‑in widgets following Material Design principles for clear, accessible interfaces.
+
+Why these choices?
+- One codebase for mobile and web speeds up development and makes maintenance easier.
+- Flutter’s rich set of widgets ensures a smooth, modern user experience.
+- The QR scanner plugin is battle‑tested, so offline ticket checks work immediately.
+
+## 2. Backend Technologies
+
+These handle data storage, user accounts, and the core logic of our service:
+
+- **Supabase**:
+  - **Authentication**: Manages user sign‑up, login, email/phone verification and role‑based access (traveler, bus owner, admin).
+  - **Database (PostgreSQL)**: Stores trips, bookings, passenger info, and audit logs.
+  - **APIs**: Automatically generated REST endpoints let the app read and write data securely.
+  - **Storage**: Holds any documents or images needed (e.g., company paperwork).
+- **Local Storage (Hive or SQLite)**:
+  - Keeps a copy of upcoming tickets and scanned validations on the device for up to 24 hours offline.
+  - Once the device goes online, saved data syncs back to Supabase automatically or on‑demand.
+
+How it all works together:
+- The mobile/web app calls Supabase APIs to fetch or update data in real time.
+- Offline scans and ticket validations happen against the local database, then sync when back online.
+- Supabase handles user roles and data security out of the box.
+
+## 3. Infrastructure and Deployment
+
+This is how we store our code, build new versions, and host the live services:
+
+- **Version Control**: Git on GitHub to track code changes and collaborate safely.
+- **CI/CD Pipeline**: GitHub Actions automatically runs tests and deploys new releases when we merge code.
+- **Backend Hosting**: Supabase’s cloud environment—no servers to manage, reliable scaling, built‑in database backups.
+- **Web Hosting**: We can publish the Flutter Web app on platforms like Vercel or Netlify for fast global delivery.
+- **Mobile App Distribution**: Google Play Store and Apple App Store for Android and iOS releases.
+
+Benefits:
+- Automated builds and tests reduce human error and speed up delivery.
+- Cloud hosting ensures high availability and easy scaling as usage grows.
+- Consistent deployment processes mean predictable, repeatable releases.
+
+## 4. Third‑Party Integrations
+
+To extend functionality without building everything from scratch, we rely on these services:
+
+- **Payments**:
+  - **PayDunya** and **CinetPay**: Support Orange Money, Wave, and bank cards. They handle secure transactions and return status updates in real time.
+- **Notifications**:
+  - **SendGrid** for email confirmations (detailed receipts).
+  - **Twilio** for SMS alerts (quick notifications).
+  - **Firebase Cloud Messaging** for in‑app push notifications.
+- **AI‑Assisted Development Tools** (used during coding, not in the run‑time environment):
+  - **VS Code** with **Cursor** plugin
+  - **Lovable.dev** for rapid front‑end scaffolding
+  - **Claude 3.7 Sonnet** for design reviews and code checks
+
+Advantages:
+- Multiple payment options meet diverse user preferences.
+- Multi‑channel notifications ensure timely information delivery, even in low‑connectivity situations.
+- Using established services reduces development time and improves reliability.
+
+## 5. Security and Performance Considerations
+
+We’ve baked in measures to keep data safe and the app snappy:
+
+Security:
+- **TLS Encryption** for all data in transit.
+- **Data Encryption at Rest** via Supabase’s built‑in safeguards.
+- **Role‑Based Access Control** ensures travelers, transport owners, and admins see only what they’re allowed to.
+- **Data Retention Policy**: Identity card numbers and personal data are stored for up to 30 days post‑trip, then purged.
+- **GDPR‑Style Consent** screens inform users how their data is used and let them request deletion.
+
+Performance:
+- **Fast List Loading**: Trip search results render in under 1 second on normal networks.
+- **Offline Scan Response**: Ticket validation via the local database happens in under 200 ms.
+- **Background Sync**: Scanned data automatically uploads when a stable connection returns, without blocking the user.
+
+## 6. Conclusion and Overall Tech Stack Summary
+
+Our technology choices were guided by three main goals: ease of use, reliability (even offline), and rapid development.
+
+- **Flutter + Flutter Web** gives us one codebase for mobile and web, ensuring consistency and faster updates.
+- **Supabase** provides a complete backend solution—authentication, database, APIs and storage—without server maintenance.
+- **Hive/SQLite** local storage powers seamless offline ticket checks.
+- **PayDunya/CinetPay** cover all our payment needs, while SendGrid, Twilio and FCM keep users informed.
+- **GitHub + Actions** streamline collaboration, testing and deployments.
+
+Together, these technologies form a robust, scalable and user‑friendly platform that meets our MVP objectives: simple booking, secure payments with commission handling, reliable offline validation, and clear analytics for administrators.

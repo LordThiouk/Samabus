@@ -1,0 +1,241 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Backend Structure Document
+
+This document outlines the backend setup for the “Plateforme de Réservation de Bus (MVP)”. It covers the overall architecture, database design, API structure, hosting choices, infrastructure components, security, monitoring, and maintenance.
+
+## 1. Backend Architecture
+
+We’re using Supabase as our backend platform. Supabase provides authentication, database, storage, and auto‑generated APIs. Here’s how everything fits together:
+
+• Design Patterns and Frameworks
+  - **Serverless-first**: We rely on Supabase’s managed services (Auth, Database, Storage, Functions) instead of running our own servers.
+  - **Event-driven**: Database triggers for actions like sending notifications after a successful booking.
+  - **Layered approach**:
+    1. **Auth Layer** (Supabase Auth) handles signup, login, and role management (traveler, bus owner, admin).  
+    2. **Data Layer** (PostgreSQL) stores all entities.  
+    3. **API Layer** (auto-generated REST and optional edge functions) exposes endpoints.  
+    4. **Integration Layer** connects to payment gateways, email/SMS services, and push notifications.
+
+• Scalability, Maintainability & Performance
+  - **Scalability**: Supabase scales horizontally for database reads/writes, and serverless functions handle spikes automatically.  
+  - **Maintainability**: Managed migrations and schema versioning in Supabase make it easy to evolve the database.  
+  - **Performance**: Built-in caching on the Supabase edge and read replicas for heavy reporting queries.
+
+## 2. Database Management
+
+• Database Technology
+  - **Type**: Relational (SQL)  
+  - **System**: PostgreSQL (hosted by Supabase)
+
+• Data Structure & Access
+  - All data is stored in tables with foreign keys to enforce relationships (users ↔ bookings, buses ↔ trips, etc.).  
+  - Supabase auto‑generates REST endpoints for CRUD operations.  
+  - Policies (Row Level Security) control who can read or write which rows based on user role.
+
+• Data Management Practices
+  - **Backups**: Automated daily snapshots with point-in-time recovery.  
+  - **Data Retention**: Personal data like CNI is kept for up to 30 days post-trip and then purged.  
+  - **Migrations**: Version-controlled SQL migration scripts.
+
+## 3. Database Schema
+
+### Human-Readable Overview
+
+• **users**: All platform users (traveler, bus owner, admin).  
+• **profiles**: Extended user info (role, approval status for bus owners).  
+• **buses**: Bus records linked to bus owners (name, capacity, type).  
+• **trips**: Scheduled trips (departure, arrival, date, price).  
+• **bookings**: Reservations made by travelers for specific trips.  
+• **passengers**: Name and CNI details per seat in a booking.  
+• **payments**: Records of payment transactions and statuses.  
+• **commissions**: 5% fee from each booking.  
+• **notifications**: Logs of emails, SMS, and push messages.  
+• **scan_logs**: Offline scan data (QR or CNI) pending sync.
+
+### SQL Schema (PostgreSQL)
+
+```sql
+-- USERS
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('traveler','bus_owner','admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- PROFILES
+CREATE TABLE profiles (
+  user_id UUID PRIMARY KEY REFERENCES users(id),
+  full_name TEXT,
+  phone TEXT,
+  company_name TEXT,         -- for bus owners
+  approved BOOLEAN DEFAULT FALSE,
+  approval_date TIMESTAMPTZ
+);
+
+-- BUSES
+CREATE TABLE buses (
+  id UUID PRIMARY KEY,
+  owner_id UUID REFERENCES users(id),
+  name TEXT,
+  capacity INTEGER,
+  type TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- TRIPS
+CREATE TABLE trips (
+  id UUID PRIMARY KEY,
+  bus_id UUID REFERENCES buses(id),
+  departure TEXT,
+  destination TEXT,
+  departure_time TIMESTAMPTZ,
+  price NUMERIC(10,2),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- BOOKINGS
+CREATE TABLE bookings (
+  id UUID PRIMARY KEY,
+  trip_id UUID REFERENCES trips(id),
+  traveler_id UUID REFERENCES users(id),
+  booked_at TIMESTAMPTZ DEFAULT NOW(),
+  status TEXT CHECK (status IN ('pending','confirmed','cancelled','refunded'))
+);
+
+-- PASSENGERS
+CREATE TABLE passengers (
+  id UUID PRIMARY KEY,
+  booking_id UUID REFERENCES bookings(id),
+  name TEXT,
+  cni TEXT,
+  qr_code TEXT
+);
+
+-- PAYMENTS
+CREATE TABLE payments (
+  id UUID PRIMARY KEY,
+  booking_id UUID REFERENCES bookings(id),
+  provider TEXT,
+  amount NUMERIC(10,2),
+  status TEXT CHECK (status IN ('initiated','success','failed')),
+  transaction_date TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- COMMISSIONS
+CREATE TABLE commissions (
+  id UUID PRIMARY KEY,
+  booking_id UUID REFERENCES bookings(id),
+  amount NUMERIC(10,2),
+  collected BOOLEAN DEFAULT FALSE
+);
+
+-- NOTIFICATIONS
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  type TEXT,
+  channel TEXT,
+  sent_at TIMESTAMPTZ,
+  payload JSONB
+);
+
+-- SCAN_LOGS (Offline Scans)
+CREATE TABLE scan_logs (
+  id UUID PRIMARY KEY,
+  trip_id UUID REFERENCES trips(id),
+  scanned_data JSONB,
+  scanned_at TIMESTAMPTZ,
+  synced BOOLEAN DEFAULT FALSE
+);
+```
+
+## 4. API Design and Endpoints
+
+We follow a RESTful approach using Supabase’s auto-generated endpoints plus custom edge functions when needed.
+
+### Key Endpoints
+
+• **/auth** (POST)  
+  - Sign up, sign in, password reset via Supabase Auth.
+
+• **/profiles**  
+  - GET /profiles/:user_id — fetch profile.  
+  - PATCH /profiles/:user_id — update profile (bus owner applies for approval).
+
+• **/buses**  
+  - GET /buses?owner_id= — list owner’s buses.  
+  - POST /buses — add a new bus (owner only).
+
+• **/trips**  
+  - GET /trips?from=&to=&date= — search trips.  
+  - POST /trips — create trip (approved owner only).
+
+• **/bookings**  
+  - POST /bookings — book seats.  
+  - GET /bookings?traveler_id= — booking history.
+  - PATCH /bookings/:id/cancel — cancel booking.
+
+• **/payments**  
+  - POST /payments/initiate — start transaction.  
+  - POST /payments/webhook — handle provider callbacks.
+
+• **/scan/validate**  
+  - POST /scan/validate — validate QR/CNI (online).  
+  - POST /scan/sync — upload offline logs when back online.
+
+• **/admin/**  
+  - GET /admin/users — list all users.  
+  - PATCH /admin/users/:id/approve — approve bus owner.  
+  - GET /admin/stats — revenue, bookings, commissions.
+  - POST /admin/refund — process refunds.
+
+## 5. Hosting Solutions
+
+• **Platform**: Supabase (hosted on AWS)  
+• **Storage**: Supabase Storage for user uploads (e‑tickets, receipts)  
+• **Edge Functions** (optional): For custom logic (e.g., payment retry, notifications).
+
+### Benefits
+
+• **Reliability**: SLA-backed infrastructure and automated failover.  
+• **Scalability**: Instant scaling of database and functions.  
+• **Cost‑Effectiveness**: Pay-as-you-go model with generous free tier for MVP.
+
+## 6. Infrastructure Components
+
+• **Load Balancer**: Handled by Supabase’s managed service  
+• **CDN**: Built-in edge caching for API responses and storage assets  
+• **Caching**: Read replicas for reporting and analytics  
+• **Background Workers**: Edge functions for syncing offline scans and sending notifications  
+
+These components work together to ensure fast page loads, smooth synchronization, and reliable uptime.
+
+## 7. Security Measures
+
+• **Authentication**: JWT via Supabase Auth; supports OAuth (email, phone).  
+• **Authorization**: Row Level Security policies enforce data access by role.  
+• **Data Encryption**: TLS in transit; AES‑256 at rest for database and storage.  
+• **Data Retention**: Automatic purge of CNI and personal data after 30 days.  
+• **Compliance**: GDPR‑ready processes (consent, data minimization, right to be forgotten).
+
+## 8. Monitoring and Maintenance
+
+• **Monitoring Tools**: Supabase Dashboard for query usage, logs, and performance metrics.  
+• **Error Tracking**: Integrate Sentry for catching edge function errors.  
+• **Alerts**: Email/SMS alerts for failed jobs, high error rates, or database slowdowns.  
+• **Maintenance**:
+  - Automated backups and point‑in‑time restores.  
+  - Monthly schema reviews and performance tuning.  
+  - Scheduled downtime notifications for major upgrades.
+
+## 9. Conclusion and Overall Backend Summary
+
+Our backend leverages Supabase’s fully managed services to deliver a secure, scalable, and maintainable foundation for the bus reservation platform. PostgreSQL provides robust relational data handling; Supabase Auth and policies ensure secure access; edge functions handle custom logic for payments and synchronization; and built‑in monitoring and backups keep the system healthy. This setup aligns with the project goals—fast time‑to‑market, reliable performance, and strong data protection—to give travelers, bus owners, and admins a smooth, secure experience.

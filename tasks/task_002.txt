@@ -1,0 +1,11 @@
+# Task ID: 2
+# Title: Bus and Route Management for Transporters
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Implement the interface for bus owners to register and manage their bus fleet and create/edit routes.
+# Details:
+Create database schemas for buses (name, capacity, type) and routes (departure city, arrival city, date, time, price). Build UI for transporters to add, edit, and delete buses. Implement route creation with form validation. Design a calendar view for scheduling routes. Add functionality to set pricing and available seats. Implement CRUD operations with Supabase for bus and route management.
+
+# Test Strategy:
+Test adding, editing, and deleting buses and routes. Verify data persistence in Supabase. Test form validations and error handling. Ensure proper relationship between buses and routes.

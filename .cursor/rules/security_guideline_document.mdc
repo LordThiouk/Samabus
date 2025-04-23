@@ -1,0 +1,182 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Security Guidelines and Implementation Plan for Plateforme de Réservation de Bus
+
+## 1. Introduction
+Cette section décrit les principes de sécurité et les étapes de mise en œuvre pour l’MVP de la platforme de réservation de bus. L’objectif est de garantir une solution robuste, conforme au RGPD et résiliente face aux menaces modernes.
+
+---
+
+## 2. Principes de Sécurité (Security by Design)
+
+1. **Sécurité par conception** – intégrer la sécurité dès la phase de conception.
+2. **Moindre privilège** – chaque rôle (client, gestionnaire, admin) ne reçoit que les autorisations strictement nécessaires.
+3. **Défense en profondeur** – enchaîner contrôles d’accès, validation d’entrée, chiffrement, journaux.
+4. **Validation côté serveur** – jamais faire confiance au client.
+5. **Échecs sécurisés** – messages d’erreur minimalistes, pas de fuites d’information.
+6. **Paramètres sécurisés par défaut** – toutes les fonctionnalités sensibles désactivées ou restreintes avant configuration.
+
+---
+
+## 3. Authentification & Contrôle d’accès
+
+### 3.1. Supabase Auth
+- Utiliser Supabase Auth avec JWT ; configurer `jwt_secret` et vérifier algorithmes (`HS256` ou `RS256`).
+- Exiger validation d’email avant activation du compte.
+- Intégrer MFA (par e‑mail ou SMS) pour les gestionnaires et admins.
+
+### 3.2. Gestion des rôles (RBAC)
+- Rôles définis dans PostgreSQL : `client`, `gestionnaire`, `admin`.
+- Policies Row Level Security (RLS) :
+  • `client` : lecture/écriture propres réservations.
+  • `gestionnaire` : gestion de ses trajets, validation offline.
+  • `admin` : lecture/écriture de l’ensemble, gestion des comptes.
+
+### 3.3. Sécurité des sessions
+- Expiration courte (idle timeout : 30 min, absolute timeout : 24 h).
+- Rejet des anciens tokens après changement de mot de passe.
+- Cookie JWT `HttpOnly`, `Secure`, `SameSite=Strict` si utilisé côté web.
+
+---
+
+## 4. Sécurisation des API & Données
+
+### 4.1. Transport Layer Security
+- Forcer HTTPS/TLS 1.2+ partout (Supabase le gère par défaut).
+- Redirection HTTP→HTTPS.
+
+### 4.2. Validation & Sanitation des Entrées
+- Utiliser les procédures stockées ou ORM Supabase pour protéger contre l’injection SQL.
+- Valider formats JSON, tailles, types :
+  • Numéro CNI (regex) ;
+  • QR code – vérifier structure (UUID or signed payload).
+
+### 4.3. Sécurité des fichiers (QR, photos CNI)
+- Stockage Supabase Storage en dehors du webroot.
+- Génération d’URLs signées (expirations courtes). 
+- Scan antivirus à la réception (hooks). 
+
+### 4.4. Rate Limiting & Protection DoS
+- Mettre en place un rate-limiter au niveau API (GitHub Actions ou un proxy NGINX). 
+- Limiter les tentatives de connexion et code de validation (5 essais max en 15 min).
+
+---
+
+## 5. Chiffrement & Protection des Données
+
+### 5.1. En transit
+- TLS 1.2+ pour toutes communications front/back.
+
+### 5.2. Au repos
+- Supabase chiffre les données en repos avec AES-256.
+- Hive/SQLite sur mobile chiffré (package `sqflite_sqlcipher`).
+
+### 5.3. Gestion des secrets
+- Aucune clé en clair dans le code. Env vars sécurisées via GitHub Secrets.
+- Pour la production, envisager Vault ou Secrets Manager.
+
+### 5.4. Rétention et suppression
+- Conserver données personnelles 30 jours post‑trajet.
+- Tâche cron Supabase pour purge automatique.
+
+---
+
+## 6. Sécurité Mobile & Offline
+
+1. **Stockage local** – chiffrer Hive/SQLite.
+2. **Validation offline** – stocker uniquement hash des QR et ID, synchroniser sur reconnection.
+3. **Authentification offline** – jeton temporaire signé, expirant sous 24 h.
+4. **Mise à jour automatique** – notifier utilisateur si version obsolète (pour patch).
+
+---
+
+## 7. Paiements & Compliance
+
+### 7.1. Intégration PayDunya & CinetPay
+- SDK/API via HTTPS.
+- Webhooks signés (vérifier signature, horodatage). 
+- Journaliser les événements de paiement (hachés pour integrité).
+
+### 7.2. Protection contre la fraude
+- Vérifier concordance montant/réservation.
+- Limiter montant max par transaction.
+
+### 7.3. Confidentialité RGPD
+- Ecran de consentement explicite avant collecte CNI.
+- Possibilité pour l’utilisateur de demander suppression anticipée.
+
+---
+
+## 8. Observabilité & Réponse aux incidents
+
+- Logs structurés (JSON), sans PII, conservés 30 jours.
+- Alertes CI/CD sur vulnérabilités de dépendances (Dependabot, Snyk).
+- Plan de réponse incident (point de contact, steps de mitigation).
+
+---
+
+## 9. Headers et Contrôles Web
+
+- Content-Security-Policy (CSP) strict.
+- Strict-Transport-Security (HSTS).
+- X-Content-Type-Options: nosniff.
+- X-Frame-Options: DENY.
+- Referrer-Policy: no-referrer-when-downgrade.
+- CSRF tokens synchronizer pour tous formulaires Flutter Web.
+
+---
+
+## 10. Déploiement & CI/CD
+
+1. **GitHub Actions:**
+   - Linting, tests unitaires, scans SAST.
+   - Build Flutter (mobile et web) + déploiement Supabase.
+2. **Environnements séparés** (dev/staging/prod).
+3. **Rollback automatique** si déploiement échoue.
+4. **Mises à jour planifiées** des dépendances et audits trimestriels.
+
+---
+
+## 11. Plan de Mise en Œuvre (8 semaines)
+
+Semaine 1–2
+- Architecture détaillée (ERD, architectures réseau).  
+- Mise en place Supabase (auth, DB, storage).  
+- CI/CD basique.  
+
+Semaine 3–4
+- Développement des API (search, booking).  
+- Authentification & RBAC.  
+- Intégration payements sandbox.  
+
+Semaine 5–6
+- Frontend Flutter (mobile + web).  
+- Offline sync & QR scanner.  
+- Notifications (email/SMS/push).  
+
+Semaine 7
+- Reporting & analytics.  
+- Tests de sécurité (SAST, dépendances).  
+- Tests utilisateurs (UX, performance offline).  
+
+Semaine 8
+- Audit sécurité externe.  
+- Correction des issues.  
+- Go‑live & monitoring.
+
+---
+
+## 12. Suivi & Gouvernance
+
+- Réunions bi‑hebdomadaires avec l’équipe sécurité.
+- Mise à jour régulière de la documentation.
+- Sensibilisation de l’équipe au RGPD et bonnes pratiques.
+
+---
+
+*Ce plan et ces directives garantissent que la Plateforme de Réservation de Bus respecte les standards de sécurité, protège les données utilisateurs, et offre une expérience fiable pour les voyageurs, gestionnaires et administrateurs.*

@@ -1,0 +1,89 @@
+**Product Requirements Document (PRD) - Plateforme de Réservation de Bus (MVP)**
+
+---
+
+## 🌟 Vision du Produit
+Créer une application mobile et web permettant aux voyageurs de réserver facilement des places dans des bus interurbains gérés par des transporteurs indépendants. Les propriétaires de bus peuvent inscrire leurs flottes, créer des trajets, recevoir les paiements et vérifier les billets par QR code ou numéro de carte d’identité, même hors connexion.
+
+---
+
+## 🎯 Objectifs du MVP
+- Offrir une interface simple pour rechercher et réserver des trajets interurbains
+- Permettre aux propriétaires de gérer leurs bus, trajets et réservations
+- Mettre en place un système de paiement et de commission automatisé
+- Autoriser le contrôle des billets via QR code ou numéro de carte d’identité, avec support offline
+
+---
+
+## 🔎 Fonctionnalités Principales
+
+### 1. Utilisateur (Client)
+- Recherche de trajets par ville de départ, destination et date
+- Affichage des trajets disponibles, détails, prix
+- Réservation de place(s), saisie d’infos personnelles
+- Saisie du numéro de carte d’identité (obligatoire pour valider la réservation)
+- Paiement (OM, Wave, carte)
+- Génération de billet avec QR code ou confirmation par CNI
+- Historique de réservations
+- ✅ Si plusieurs places sont réservées, l’utilisateur doit saisir **un nom et un numéro de CNI par passager**
+
+### 2. Propriétaire / Gestionnaire
+- Inscription et gestion de profil pro
+- Ajout de bus (nom, capacité, type)
+- Création de trajets (départ, arrivée, date, prix)
+- Suivi des réservations par trajet
+- Scanner de QR codes ou validation par numéro de CNI (offline)
+- Tableau de bord simplifié (trajets, ventes)
+
+### 3. Administrateur Plateforme
+- Gestion des comptes utilisateurs et transporteurs
+- Suivi des activités globales (réservations, revenus, commissions)
+- Statistiques par ville / trajet
+
+---
+
+## 📊 Modèle Économique
+- Commission de 5% par place réservée
+- Prélevée automatiquement sur le montant payé par le client
+- Revenu reversé au transporteur = 95% du montant total de la réservation
+
+---
+
+## 🚀 Architecture Technique
+
+### Stack Technique :
+- **Frontend Mobile** : Flutter
+- **Backend/API** : Supabase (auth, base de données, API REST, stockage)
+- **Stockage local** : Hive / SQLite (scan offline)
+- **Paiement** : Intégration PayDunya ou CinetPay
+- **QR Scanner** : qr_code_scanner (Flutter plugin)
+
+### Rôles :
+- `client` : voyageur
+- `gestionnaire` : propriétaire de bus ou chauffeur
+- `admin` : gestion centrale plateforme
+
+---
+
+## ⏳ Timeline MVP (estimé)
+**Phase 1 (Semaine 1-2)** : Auth, interface client, réservation simple, ajout bus/trajet
+
+**Phase 2 (Semaine 3-4)** : Paiement, génération QR + enregistrement CNI, scan offline
+
+**Phase 3 (Semaine 5-6)** : Dashboard pro + admin, historique, synchronisation offline, validation par CNI
+
+**Phase 4 (Semaine 7-8)** : Tests, optimisation, déploiement store
+
+---
+
+## ✅ Succès du MVP si :
+- 3-5 transporteurs onboardés et actifs
+- Premiers billets achetés, scannés ou validés via CNI
+- Retours clients et transporteurs positifs
+- Collecte de premières données d’usage
+
+---
+
+**Produit porté par : Opensenmedia**
+**Contact : info@opensenmedia.com / +221 770951543**
+

@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Transporter Dashboard
+# Status: pending
+# Dependencies: 5, 7
+# Priority: medium
+# Description: Create a dashboard for bus owners to track reservations, view sales data, and manage their business.
+# Details:
+Design and implement dashboard UI with key metrics (total sales, upcoming trips, seat occupancy). Create reservation management screen showing bookings by trip. Implement trip status management (scheduled, in progress, completed). Build simple analytics charts for sales and occupancy trends. Create revenue reports with commission breakdowns. Implement filtering and date range selection for reports.
+
+# Test Strategy:
+Test dashboard data accuracy against database records. Verify filtering and date range functionality. Test reservation management features. Ensure proper calculation of business metrics and commission breakdowns.

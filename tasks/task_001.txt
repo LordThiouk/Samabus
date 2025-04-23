@@ -1,0 +1,83 @@
+# Task ID: 1
+# Title: Setup Project Architecture and Authentication
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Initialize the Flutter project with Supabase integration and implement user authentication for all three roles (client, gestionnaire, admin).
+# Details:
+Create a new Flutter project with proper folder structure. Integrate Supabase SDK for authentication. Implement sign-up and login screens with role selection. Configure Supabase authentication rules for the three user roles (client, gestionnaire, admin). Set up navigation flows based on user roles. Create user profile models and database tables in Supabase.
+
+# Test Strategy:
+Test user registration, login, and logout flows for each role. Verify proper role-based redirections. Test authentication persistence across app restarts.
+
+# Subtasks:
+## 1. Initialize Flutter Project with Supabase SDK and Folder Structure [done]
+### Dependencies: None
+### Description: Set up a new Flutter project with proper architecture, integrate Supabase SDK, and establish the folder structure following best practices for scalability and maintainability.
+### Details:
+1. Create a new Flutter project using `flutter create --org com.yourcompany app_name`
+2. Configure project dependencies in pubspec.yaml:
+   - Add supabase_flutter package
+   - Add other essential packages (flutter_bloc or provider for state management, go_router for navigation)
+3. Set up the folder structure:
+   - lib/core/ (for constants, themes, utils, etc.)
+   - lib/data/ (for repositories, data sources, models)
+   - lib/domain/ (for business logic, entities)
+   - lib/presentation/ (for UI components, screens, widgets)
+   - lib/services/ (for API services, local storage)
+4. Create environment configuration files for different environments (dev, prod)
+5. Initialize Supabase client in main.dart with proper configuration
+6. Test the connection to Supabase by making a simple query
+7. Set up a basic theme and application entry point
+
+## 2. Create Supabase Database Schema and User Models [done]
+### Dependencies: 1.1
+### Description: Design and implement the database schema in Supabase, including user tables with role definitions and necessary relationships for the three user types.
+### Details:
+1. Access Supabase dashboard and create the following tables:
+   - users (id, email, created_at, role, profile_data)
+   - profiles (user_id, name, avatar_url, role_specific_fields)
+   - role_permissions (role_id, permission_name, access_level)
+2. Set up Row Level Security (RLS) policies for each table
+3. Create appropriate indexes for performance
+4. Implement Dart models corresponding to database tables:
+   - Create BaseUser class
+   - Extend for ClientUser, GestionnaireUser, and AdminUser with role-specific properties
+   - Implement fromJson/toJson methods for serialization
+5. Create a UserRepository class to handle CRUD operations
+6. Set up database triggers or functions for user creation events
+7. Test the models by manually creating test users in each role
+8. Verify RLS policies are working correctly with different user roles
+
+## 3. Implement Authentication UI and Role-Based Navigation [in-progress]
+### Dependencies: 1.1, 1.2
+### Description: Create the authentication screens (login, signup, password reset) with role selection, implement the authentication logic, and set up role-based navigation flows.
+### Details:
+1. Create reusable UI components for authentication:
+   - Custom text fields with validation
+   - Authentication buttons
+   - Error message displays
+2. Implement the following screens:
+   - Login screen with email/password fields
+   - Signup screen with role selection dropdown
+   - Password reset screen
+   - Email verification screen
+3. Create an AuthService class to handle:
+   - User registration with role assignment
+   - Login functionality
+   - Password reset
+   - Session management
+4. Implement role-based navigation:
+   - Create a navigation service or router configuration
+   - Define separate navigation stacks for each user role
+   - Implement guards/middleware to prevent unauthorized access
+5. Add state management for authentication:
+   - Create AuthState class (loading, authenticated, unauthenticated, error)
+   - Implement persistence of auth state using secure storage
+6. Test the complete authentication flow:
+   - New user registration with each role
+   - Login with existing credentials
+   - Password reset functionality
+   - Proper redirection based on user role
+7. Implement logout functionality and session expiration handling
+

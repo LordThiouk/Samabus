@@ -1,0 +1,117 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Implementation plan
+
+## Phase 1: Environment Setup
+
+1. **Prevalidation**: Check if current directory contains `pubspec.yaml`; if yes, skip Flutter project initialization. (Project Overview)
+2. **Action**: Verify Flutter SDK is installed by running `flutter --version`. If not present, install Flutter stable channel as per https://docs.flutter.dev/get-started/install (Technical Architecture)
+3. **Validation**: Run `flutter doctor -v` and ensure Android, iOS, and web support are enabled. (Technical Architecture)
+4. **Action**: Install VS Code extensions: Flutter, Dart, and Cursor. (Technical Architecture)
+5. **Validation**: Run `code --list-extensions | grep -E "(Dart-Code.flutter|ms-vscode.cursor)"` to confirm installation. (Technical Architecture)
+6. **Action**: Initialize Git repository with `git init`. (Technical Architecture)
+7. **Action**: Create `.gitignore` at project root with Flutter defaults (from https://github.com/flutter/flutter/blob/master/packages/flutter_tools/templates/app/gitignore). (Technical Architecture)
+8. **Action**: Create directory `.cursor/` at project root. (Technical Architecture)
+9. **Action**: Create file `.cursor/cursor_metrics.md` in project root and add initial metrics placeholders. Refer to `cursor_project_rules.mdc` for contents. (Technical Architecture)
+10. **Action**: Create file `.cursor/mcp.json` and add it to `.gitignore`. (Technical Architecture)
+11. **Action**: Insert placeholder MCP config into `.cursor/mcp.json`:
+    ```json
+    // macOS
+    { "mcpServers": { "supabase": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-postgres", "<connection-string>"] } }}
+    // Windows
+    { "mcpServers": { "supabase": { "command": "cmd", "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-postgres", "<connection-string>"] } }}
+    ```
+    (Technical Architecture)
+12. **Action**: Display link for obtaining Supabase MCP connection string: `https://supabase.com/docs/guides/getting-started/mcp#connect-to-supabase-using-mcp`. Instruct user to replace `<connection-string>` after retrieval. (Detailed Requirements & Decisions)
+13. **Validation**: Once `<connection-string>` is updated, navigate to VS Code Cursor assistant Settings → MCP and ensure status is green. (Technical Architecture)
+
+## Phase 2: Frontend Development
+
+14. **Action**: Create Flutter project named `bus_booking_app` with web support: 
+    ```bash
+    flutter create bus_booking_app --platforms=android,ios,web
+    ```
+    (Technical Architecture)
+15. **Validation**: Change into `/bus_booking_app` and run `flutter devices` to list available targets. (Technical Architecture)
+16. **Action**: Open `/bus_booking_app/pubspec.yaml` and add dependencies:
+    • `supabase_flutter: ^1.0.0` (Backend/API)
+    • `hive: ^2.0.0`, `hive_flutter: ^1.1.0` (Offline QR/CNI)
+    • `qr_code_scanner: ^0.7.0` (QR Scanner)
+    • `flutter_local_notifications: ^9.0.0` (Notifications)
+    • `flutter_localizations:` (Localization)
+    • `riverpod: ^2.0.0` (State Management)  
+    (Technical Architecture)
+17. **Validation**: Run `flutter pub get` and ensure no dependency errors. (Technical Architecture)
+18. **Action**: Configure localization by adding asset entries in `pubspec.yaml` under `flutter:`:
+    ```yaml
+    assets:
+      - assets/l10n/intl_en.arb
+      - assets/l10n/intl_fr.arb
+    ```
+    (Detailed Requirements & Decisions)
+19. **Action**: Create directory `/lib/l10n/` and add `intl_en.arb` and `intl_fr.arb` with base translations for labels. (Localization)
+20. **Action**: In `/lib/main.dart`, enable localization delegates:
+    ```dart
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    supportedLocales: [Locale('en'), Locale('fr')],
+    ```
+    (Localization)
+21. **Validation**: Run `flutter pub run intl_utils:generate` and verify generated localization files in `/lib/generated/`. (Localization)
+22. **Action**: Create `/lib/screens/LoginScreen.dart` with email and phone fields and social login buttons. (App Flow: Traveler)
+23. **Action**: Add input validation using regex from `Detailed Requirements & Decisions: Notifications` for email/phone. (Detailed Requirements & Decisions)
+24. **Validation**: Write widget test in `/test/login_screen_test.dart` to verify field presence and run `flutter test test/login_screen_test.dart`. (Testing)
+25. **Action**: Create `/lib/widgets/TripSearchForm.dart` including date picker, origin/destination inputs. (App Flow: Traveler)
+26. **Action**: Create `/lib/screens/TripResultsScreen.dart` to display trip list fetched from backend. (App Flow: Traveler)
+27. **Validation**: Mock Supabase client in `/test/trip_results_test.dart` and run `flutter test`. (Testing)
+28. **Action**: Create `/lib/screens/BookingDetailsScreen.dart` for seat selection and passenger CNI entry. (App Flow: Traveler)
+29. **Action**: Create `/lib/screens/PaymentScreen.dart` integrating PayDunya and CinetPay webviews as per their SDK docs. (Detailed Requirements & Decisions)
+30. **Validation**: Write integration test in `/integration_test/payment_flow_test.dart` to simulate payment status updates. (Testing)
+
+## Phase 3: Backend Development
+
+31. **Action**: In Supabase console, create PostgreSQL schema with tables:
+    • `users(id PK, email, phone, role)`
+    • `transporteurs(id FK→users, status)`
+    • `buses(id PK, transporteur_id FK, seats, license_plate)`
+    • `trips(id PK, bus_id FK, origin, destination, departure_time, price)`
+    • `bookings(id PK, user_id FK, trip_id FK, seats_selected, cni_data, status, created_at)`
+    • `payments(id PK, booking_id FK, method, amount, commission, status, processed_at)`
+    (Technical Architecture)
+32. **Validation**: Export schema DDL from Supabase console and verify in `/db/schema.sql`. (Technical Architecture)
+33. **Action**: Enable Supabase Authentication providers: email, phone, OAuth disabled. Set row-level security by role (traveler, transporteur, admin). (Detailed Requirements & Decisions)
+34. **Action**: Create storage bucket `cni-docs` with policy to expire objects after 30 days. (Data Retention)
+35. **Validation**: Run `supabase db remote commit` via MCP to push schema. (Technical Architecture)
+36. **Action**: In `/backend/functions/`, write REST endpoints with Supabase Functions:
+    • `GET /trips?origin=&destination=&date=`
+    • `POST /bookings`
+    • `GET /bookings/:id`
+    • `POST /payments/webhook`  
+    (App Flow & Detailed Requirements)
+37. **Validation**: Write unit tests in `/backend/tests/` and run `npm test`. (Testing)
+
+## Phase 4: Integration
+
+38. **Action**: In `/lib/services/supabase_service.dart`, implement methods for searchTrips(), createBooking(), getBooking(), listenPaymentWebhook(). (App Flow)
+39. **Validation**: Add mock Supabase client in `/test/supabase_service_test.dart` and run `flutter test`. (Testing)
+40. **Action**: Connect `TripResultsScreen` to `searchTrips()` and handle loading & error states. (App Flow: Traveler)
+41. **Action**: Integrate `Hive` for offline scan logs: initialize Hive in `main.dart` and define `ScanLog` adapter. (Offline Functionality)
+42. **Action**: Create `/lib/screens/ScannerScreen.dart` using `qr_code_scanner` plugin. Store scan event locally if offline. (Detailed Requirements & Decisions)
+43. **Action**: Implement background sync service in `/lib/services/sync_service.dart` that retries up to 3 times every 2 seconds. (Offline Functionality & Q&A: Payment Failures)
+44. **Validation**: Simulate offline scan in emulator, then run `sync_service.sync()` after reconnect, assert logs cleared. (Testing)
+45. **Action**: Implement in-app push notifications via `flutter_local_notifications` and Firebase Cloud Messaging; configure in `/android/app/src/main/` and `/ios/Runner/`. (Detailed Requirements & Decisions)
+46. **Validation**: Send test push from FCM console and verify on device. (Testing)
+
+## Phase 5: Deployment
+
+47. **Action**: Deploy Supabase backend to hosted project in region `us-west-2`; enable backups. (Tech Stack: Backend)
+48. **Validation**: Run health check via `GET /health` endpoint returns 200. (Testing)
+49. **Action**: Build Flutter web with `flutter build web --release` and deploy to Vercel using `vercel.json` config in root. (Tech Stack: Deployment)
+50. **Validation**: Run end-to-end Cypress test located in `/e2e/` against the production URL. (Testing)
+
+> **Note**: For all steps involving versioned tools, use the exact versions specified in `Tech Stack` and do not upgrade to newer versions without updating this plan.  
+> **Next**: After MCP connection is green, replace `<connection-string>` in `.cursor/mcp.json` and proceed with Supabase schema push (Phase 3 Step 35).  

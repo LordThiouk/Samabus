@@ -1,0 +1,147 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Project Requirements Document (PRD)
+
+**Project:** Plateforme de Réservation de Bus (MVP)\
+**Date:** *(Today’s Date)*
+
+## 1. Project Overview
+
+**Paragraph 1**\
+We’re building a unified web & mobile platform (Flutter/Web) that lets travelers search, book, pay for and manage intercity bus trips operated by independent transporteurs. On the customer side, the app must feel as simple as “search → book → pay → ride,” while on the operator side it provides fleet registration, trip publishing and offline ticket‑scanning. The core problem this solves is the fragmented, paper‑based booking process many small bus companies still use—leading to lost sales, manual errors and low traveler confidence.
+
+**Paragraph 2**\
+Our key objectives are to launch an MVP with:
+
+*   A smooth, multi‑channel booking experience (web + mobile)
+*   Secure, automated payment and commission handling (5% fee)
+*   Offline ticket validation (QR + ID number)
+*   Basic analytics and admin controls to monitor activity and onboard new carriers\
+    Success will be measured by getting 3–5 active transporteurs onboard, seeing first paid & scanned tickets, and capturing early user feedback.
+
+## 2. In‑Scope vs. Out‑of‑Scope
+
+**In‑Scope (MVP v1.0)**
+
+*   User (traveler) registration/authentication (email + phone + code)
+*   Trip search by departure, destination, date
+*   Seat selection, passenger info (name + CNI)
+*   Payment via Orange Money, Wave & card (integrated with PayDunya + CinetPay)
+*   E‑ticket issuance with QR code + CNI reference
+*   Booking history & cancellation (within policy)
+*   Transporteur signup (admin review/approval), profile & fleet management
+*   Trip creation (schedule, fare, seats)
+*   Offline ticket validation (qr_code_scanner + local DB via Hive/SQLite)
+*   Admin web dashboard (user & transporter management, stats, refunds)
+*   Multi‑channel notifications: email, SMS, in‑app push
+*   Localization in French & English
+*   Data retention: CNI & personal data stored max 30 days post‑trip, GDPR‑style compliance
+
+**Out‑of‑Scope (Post‑MVP)**
+
+*   Dynamic or demand‑based pricing
+*   Loyalty or rewards program
+*   Live bus location tracking / maps
+*   Chat or in‑app support module
+*   Additional language support beyond FR/EN
+*   Mobile‑wallet (Apple/Google Wallet) integration
+*   Third‑party travel aggregator APIs
+*   Advanced marketing dashboards
+
+## 3. User Flow
+
+**Traveler Journey**
+
+1.  New user opens app → signs up with email, password & phone → enters confirmation code → lands on dashboard.
+2.  On “Search” screen they pick departure city, arrival city & date → see list of available trips with times, prices and seats left → tap a trip to view details.
+3.  They select number of seats → enter each passenger’s name + CNI → choose payment method (Orange Money, Wave, card) → complete payment via PayDunya/CinetPay → receive e‑ticket with QR + CNI summary in‑app, by email & SMS.
+4.  Tickets appear under “My Bookings.” They can view, share or cancel within policy.
+
+**Transporteur & Admin Journey**
+
+1.  Transporteur downloads app → signs up with company details + docs → admin reviews & approves → transporteur logs in.
+2.  They add buses (name, capacity, type) → create trips (route, date, time, fare) → publish schedule.
+3.  On trip day, driver launches offline scanner → app loads upcoming booking IDs & QR codes from local DB → validates each passenger by QR or CNI even without internet → syncs back to server automatically or manually once online.
+4.  Admin logs into web dashboard → views overall bookings, revenue, commission reports → manages user/transporter accounts → processes refunds or disputes.
+
+## 4. Core Features
+
+*   **Authentication & Profiles**: Email + phone verification; traveler, transporteur & admin roles
+*   **Trip Search & Discovery**: Filter by cities & date; sortable list
+*   **Booking Workflow**: Multi‑seat, per‑passenger details; CNI capture
+*   **Payment Gateway**: Orange Money, Wave, card via PayDunya/CinetPay; automated 5% commission
+*   **E‑Ticket Issuance**: QR code + CNI reference; multi‑channel delivery (email, SMS, push)
+*   **Local Storage & Offline Sync**: Hive/SQLite queue for scanning → auto/manual sync on reconnect
+*   **QR & CNI Scanning**: qr_code_scanner plugin for instant offline validation
+*   **Transporteur Dashboard**: Fleet & trip CRUD; reservation overview
+*   **Admin Panel**: User/transporter approval; global stats; refunds & financial adjustments
+*   **Analytics & Reporting**: Top routes, peak times, payment method usage, cancellations
+*   **Localization**: FR & EN; easy i18n expansion
+*   **Notifications**: Email templates; SMS alerts; in‑app push
+*   **Data Retention & Privacy**: 30‑day CNI storage; encrypted rest & transit; GDPR‑style consent
+
+## 5. Tech Stack & Tools
+
+*   **Frontend (Mobile & Web)**: Flutter & Flutter Web
+
+*   **Backend/API**: Supabase (Auth, PostgreSQL, REST)
+
+*   **Local Database**: Hive or SQLite for offline queues
+
+*   **Payment Integrations**: PayDunya + CinetPay SDKs
+
+*   **QR Scanning**: qr_code_scanner Flutter plugin
+
+*   **IDE & AI‑Assisted Coding**:
+
+    *   VS Code with Cursor plugin (real‑time AI suggestions)
+    *   Lovable.dev for quick front‑end/full‑stack scaffolding
+    *   Claude 3.7 Sonnet for hybrid reasoning & code reviews
+
+## 6. Non‑Functional Requirements
+
+*   **Performance**:
+
+    *   Web & mobile list loads < 1 s (under normal network)
+    *   Offline scan response < 200 ms
+
+*   **Security & Compliance**:
+
+    *   TLS for all API calls; data encryption at rest (Supabase)
+    *   Role‑based access control (RBAC)
+    *   GDPR‑style consent screen; secure CNI storage & deletion policy
+
+*   **Reliability & Availability**:
+
+    *   99.5% uptime for auth & booking APIs
+    *   Offline mode must operate up to 24 hrs without crashing
+
+*   **Usability**:
+
+    *   WCAG AA guidelines for color contrast & font sizes
+    *   Consistent UI patterns on mobile/web
+
+## 7. Constraints & Assumptions
+
+*   **Offline window**: up to 24 hrs for ticket validation
+*   **Synchronization**: background service triggers on reconnect; manual “Sync now” button
+*   **Admin‑approved transporteurs** only can publish trips
+*   **Data retention**: personal & CNI data removed 30 days post‑trip
+*   **Languages**: only French & English at launch
+*   **Payment providers** availability in target regions (OM, Wave, card)
+
+## 8. Known Issues & Potential Pitfalls
+
+*   **API Rate Limits**: PayDunya/CinetPay may throttle—implement exponential backoff & retries
+*   **Offline Conflict**: simultaneous scans of same ticket—use local lock or status flag to avoid double‑validation
+*   **Time Zones**: departure/arrival time consistency—store all times in UTC + display in local
+*   **Network Flakiness**: partial sync failures—maintain a dead‑letter queue and surface errors in UI
+*   **Data Privacy**: accidental CNI leaks—ensure strict encryption and access logging
+*   **Admin Bottleneck**: manual transporteur approval—consider auto‑approval criteria in future
+
+This PRD provides all the details an AI or development team needs to generate subsequent technical docs—stack layouts, frontend patterns, backend schemas, security guidelines and implementation plans—without ambiguity.

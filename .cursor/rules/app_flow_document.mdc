@@ -1,0 +1,56 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# App Flow Document
+
+## Onboarding and Sign-In/Sign-Up
+
+When a new user first opens the app or visits the web version built with Flutter Web, they land on a simple landing page that offers options to log in or create an account. A traveler taps “Sign Up” and is prompted to choose their role; they select “Traveler,” then enter an email address, create a password, and provide their phone number. The app immediately sends a confirmation code to that phone number or email, and the traveler enters the code to verify their account. After verification, they accept the terms and privacy policy and are taken to their personal dashboard.
+
+A bus owner taps “Sign Up,” chooses the “Transporteur” role, and fills in company details including company name, contact information, and uploads required documents. Upon submission, the account enters a pending state and the owner sees a notice that an administrator must approve the application. Once the admin validates the transporteur’s documents, the owner receives an email and in‑app notification that their account is activated and they may log in.
+
+Administrators do not self‑register. The initial admin accounts are created by the platform team and can sign in via the same email and password flow. Administrators land on a dashboard after authentication that is distinct from traveler and transporteur interfaces.
+
+Users who forget their password tap “Forgot Password” on the login screen and enter their email address. The system sends a reset link or code, and the user follows the instructions to set a new password. To sign out, any user taps the profile icon in the header and chooses “Log Out,” which returns them to the landing page.
+
+## Main Dashboard or Home Page
+
+After logging in, travelers arrive on a home page with a prominent search bar at the top where they can enter departure city, destination city, and travel date. Below the search, recent bookings appear as cards showing date, time, and status. A bottom navigation bar allows travelers to switch between Search, My Bookings, Notifications, and Profile. The Search screen leads into the trip discovery flow, My Bookings opens the history of tickets, Notifications shows messages sent via email, SMS, and in‑app push, and Profile leads to personal settings.
+
+Transporteurs see a sidebar menu on the web and a drawer menu on mobile that list Fleet, Trips, Reservations, Scanner, Analytics, and Account Settings. The Fleet section lists registered buses. Trips shows all published and draft journeys. Reservations displays all upcoming and past bookings for each trip. Scanner launches the offline validation tool. Analytics presents key performance metrics. Account Settings allows company details updates.
+
+Administrators land on a global dashboard that presents aggregated metrics such as total reservations, revenue, and commission earned. A left navigation panel includes Users, Transporteurs, Bookings, Finance, Reports, and Platform Settings. Each menu item opens a dedicated page for deeper management.
+
+## Detailed Feature Flows and Page Transitions
+
+### Traveler Booking Workflow
+
+On the Search page, a traveler enters departure and arrival cities along with a date. When they tap “Search,” the app fetches matching trips and displays them in a scrollable list. Tapping any trip opens a detail page showing departure time, duration, price per seat, bus capacity, and refund policy. The traveler taps “Book Now” and selects how many seats they want. They fill in passenger information for each seat, entering full name and identity card number. After confirming passenger details, they tap “Proceed to Payment.” On the payment page they choose Orange Money, Wave, or bank card. Selecting a method triggers the appropriate integration (PayDunya or CinetPay) within a secure payment module. The traveler sees real‑time status of the transaction. Upon success, the app generates an e-ticket with a unique QR code and reservation summary. This ticket appears immediately in My Bookings, and the traveler also receives confirmation by email, SMS, and push notification.
+
+### Transporteur Fleet and Trip Management
+
+A transporteur logging in for the first time after approval lands on the Fleet page. They tap an “Add Bus” button, fill in bus name, seating capacity, and vehicle type, and save. The new bus appears in their list. Next, the transporteur navigates to Trips and taps “Create Trip.” They select one of their buses, set departure and arrival cities, choose dates and times, define fare per seat, and publish. The published trip instantly becomes available to travelers. Back on the Trips page, they can tap any journey to see reservation counts and manage seat availability or cancel the trip.
+
+### Ticket Validation and Offline Scanning
+
+On travel day, the driver or controller opens the Scanner section on their device. The app automatically attempts to synchronize up to 24 hours of upcoming booking data from Supabase into local storage (Hive or SQLite). If the device is offline, they can trigger a manual “Download” button to fetch data once connectivity returns. When a passenger boards, the driver launches the camera scanner or taps to enter an identity card number manually. The scanner cross‑references the local database to verify that the QR code or ID matches a valid reservation. If validation succeeds, the app shows a green confirmation; if not, it shows an error message. All validation actions are stored locally. As soon as the device regains internet, the app pushes validation logs back to the server automatically. Drivers may also tap “Sync Now” to force upload.
+
+### Administrator Web Panel
+
+An administrator signs in and sees the global dashboard. From Users, they can list, search, and deactivate traveler or transporteur accounts. In Transporteurs, the admin reviews pending applications, views uploaded documents, and taps “Approve” or “Reject.” Approved transporteurs receive notifications automatically. The Bookings page displays all reservations across the platform, filterable by date, route, or payment status. Finance lets the admin view commission totals, process refunds, or adjust payments. Reports generate analytics on top routes, peak booking hours, payment method usage, and cancellation rates. Platform Settings allow the admin to modify commission percentages, configure payment provider credentials, and set data‑retention periods.
+
+## Settings and Account Management
+
+Travelers access their personal settings by tapping Profile on mobile or clicking their avatar on web. They can update name, email, phone number, and change their password. They may also select preferred notification channels—email, SMS, or push—for booking confirmations and alerts. Transporteurs find similar options under Account Settings, plus the ability to update company information and banking details for payout. Administrators use Platform Settings to manage global parameters such as the platform commission rate, payment provider keys, languages supported (French and English), and data retention policy for identity card information. From any settings page, users return to their main dashboard via the back arrow or the persistent navigation menu.
+
+## Error States and Alternate Paths
+
+If a traveler enters an invalid city name or date, the search form shows an inline error message prompting correction. During booking, if a passenger’s identity card number fails basic format validation, the app highlights that field with an explanatory message. Payment failures display clear reasons such as insufficient funds or network error, and offer a “Try Again” button that returns the user to the payment selection page without losing entered data. In offline scanning, if no booking data could be downloaded, the scanner screen informs the driver that no bookings are available and suggests reconnecting to the internet or contacting support. Any API call error shows a toast or full‑screen error page with an option to retry. When connectivity is lost mid‑flow, the app caches form data locally and prompts the user to retry once back online.
+
+## Conclusion and Overall App Journey
+
+A traveler’s journey begins with signing up, verifying their contact information, and landing on a search‑focused home page. They quickly find a bus route, reserve seats by providing passenger names and identity data, pay through their preferred mobile money or card option, and immediately receive an e‑ticket in‑app and via multiple communication channels. They revisit My Bookings to view or cancel trips within policy. A transporteur’s experience starts with creating a professional profile, awaiting admin approval, then adding buses and publishing trips. On travel day, they validate tickets through a robust offline scanner that synchronizes seamlessly. An administrator oversees the entire system through a web panel that manages accounts, approves transporteurs, monitors bookings, and handles finances. At each step, clear messages guide users, error states offer recovery options, and settings pages keep personal and global configurations under control. From signup to daily operations, every interaction flows logically to support the core mission of simple, reliable intercity bus booking and management.
