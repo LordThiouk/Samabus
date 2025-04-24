@@ -1,75 +1,75 @@
 class Payment {
   final String id; // UUID
   final String bookingId; // UUID
-  final String provider;
-  final String? providerRef; // Nullable if not immediately available
+  final String paymentProvider; // Updated from provider
+  final String? providerTransactionId; // Updated from providerRef
   final double amount;
-  final double commissionAmount;
+  final double? commissionAmount; // Nullable as it's generated in DB
   final String status; // 'initiated','success','failed', 'refunded'
-  final DateTime transactionDate;
-  final DateTime? processedAt;
+  final DateTime transactionTimestamp; // Updated from transactionDate
+  final DateTime? updatedAt;
 
   Payment({
     required this.id,
     required this.bookingId,
-    required this.provider,
-    this.providerRef,
+    required this.paymentProvider, // Updated
+    this.providerTransactionId, // Updated
     required this.amount,
-    required this.commissionAmount,
+    this.commissionAmount,
     required this.status,
-    required this.transactionDate,
-    this.processedAt,
+    required this.transactionTimestamp, // Updated
+    this.updatedAt,
   });
 
    factory Payment.fromJson(Map<String, dynamic> json) {
     return Payment(
-      id: json['id'],
-      bookingId: json['booking_id'],
-      provider: json['provider'],
-      providerRef: json['provider_ref'],
+      id: json['id'] as String,
+      bookingId: json['booking_id'] as String,
+      paymentProvider: json['payment_provider'] as String, // Updated key
+      providerTransactionId: json['provider_transaction_id'] as String?, // Updated key
       amount: (json['amount'] as num).toDouble(),
-      commissionAmount: (json['commission_amount'] as num).toDouble(),
-      status: json['status'],
-      transactionDate: DateTime.parse(json['transaction_date']),
-      processedAt: json['processed_at'] != null
-          ? DateTime.parse(json['processed_at'])
-          : null,
+      commissionAmount: (json['commission_amount'] as num?)?.toDouble(), // Updated key, handle null
+      status: json['status'] as String,
+      transactionTimestamp: DateTime.parse(json['transaction_timestamp'] as String), // Updated key
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null, // Changed from processedAt
     );
   }
 
   Map<String, dynamic> toJson() => {
       'id': id,
       'booking_id': bookingId,
-      'provider': provider,
-      'provider_ref': providerRef,
+      'payment_provider': paymentProvider, // Updated key
+      'provider_transaction_id': providerTransactionId, // Updated key
       'amount': amount,
-      'commission_amount': commissionAmount,
+      // commissionAmount is generated in DB, not sent
       'status': status,
-      'transaction_date': transactionDate.toIso8601String(),
-      'processed_at': processedAt?.toIso8601String(),
+      'transaction_timestamp': transactionTimestamp.toIso8601String(), // Updated key
+      // updatedAt is handled by the database
   };
 
   Payment copyWith({
     String? id,
     String? bookingId,
-    String? provider,
-    String? providerRef,
+    String? paymentProvider, // Updated
+    String? providerTransactionId, // Updated
     double? amount,
     double? commissionAmount,
     String? status,
-    DateTime? transactionDate,
-    DateTime? processedAt,
+    DateTime? transactionTimestamp, // Updated
+    DateTime? updatedAt,
   }) {
     return Payment(
       id: id ?? this.id,
       bookingId: bookingId ?? this.bookingId,
-      provider: provider ?? this.provider,
-      providerRef: providerRef ?? this.providerRef,
+      paymentProvider: paymentProvider ?? this.paymentProvider, // Updated
+      providerTransactionId: providerTransactionId ?? this.providerTransactionId, // Updated
       amount: amount ?? this.amount,
       commissionAmount: commissionAmount ?? this.commissionAmount,
       status: status ?? this.status,
-      transactionDate: transactionDate ?? this.transactionDate,
-      processedAt: processedAt ?? this.processedAt,
+      transactionTimestamp: transactionTimestamp ?? this.transactionTimestamp, // Updated
+      updatedAt: updatedAt ?? this.updatedAt, // Changed from processedAt
     );
   }
 } 

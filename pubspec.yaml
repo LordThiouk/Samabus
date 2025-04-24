@@ -20,11 +20,17 @@ dependencies:
   hive_flutter: ^1.1.0
   connectivity_plus: ^4.0.2
   crypto: ^3.0.3
+  go_router: ^14.2.1
+  cupertino_icons: ^1.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^2.0.0 # Example linter, adjust if needed
+  mockito: ^5.4.4 # Add mockito
+  build_runner: ^2.4.9 # Downgrade build_runner to ^2.4.9
 
 flutter:
   uses-material-design: true

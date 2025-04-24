@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/auth_status.dart';
 import '../../utils/app_localizations.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/loading_overlay.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
+
+  static const String routeName = '/login';
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,32 +31,28 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _login() async {
-    if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  Future<void> _submitLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final authProvider = context.read<AuthProvider>();
       
-      final success = await authProvider.signIn(
+    await authProvider.signInWithPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      
-      if (!mounted) return;
-      
-      if (!success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(authProvider.errorMessage ?? 'Login failed')),
-        );
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    final authProvider = Provider.of<AuthProvider>(context);
+    final authProvider = context.watch<AuthProvider>();
+    final isLoading = authProvider.status == AuthStatus.authenticating;
     
     return Scaffold(
-      body: SafeArea(
+      body: LoadingOverlay(
+        isLoading: isLoading,
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -67,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    localizations.get('app_name'),
+                      'SamaBus',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 28,
@@ -75,32 +77,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 48),
-                  TextFormField(
+                    CustomTextField(
                     controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: localizations.get('email'),
-                      prefixIcon: const Icon(Icons.email),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                      labelText: 'Email',
+                      prefixIcon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                         return 'Please enter your email';
                       }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
+                        if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+                           return 'Please enter a valid email address';
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
+                    CustomTextField(
                     controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: localizations.get('password'),
-                      prefixIcon: const Icon(Icons.lock),
+                      labelText: 'Password',
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: !_isPasswordVisible,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible
@@ -113,11 +110,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         },
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    obscureText: !_isPasswordVisible,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
@@ -125,35 +117,36 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen(),
-                          ),
-                        );
+                        onPressed: isLoading ? null : () {
+                          context.push(ForgotPasswordScreen.routeName);
                       },
-                      child: Text('Forgot Password?'),
+                        child: const Text('Forgot Password?'),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    if (authProvider.status == AuthStatus.error && authProvider.errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Text(
+                          authProvider.errorMessage!,
+                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                   ElevatedButton(
-                    onPressed: authProvider.isLoading ? null : _login,
+                      onPressed: isLoading ? null : _submitLogin,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: authProvider.isLoading
-                        ? const CircularProgressIndicator()
-                        : Text(
-                            localizations.get('login'),
-                            style: const TextStyle(fontSize: 16),
+                      child: const Text(
+                              'Login',
+                              style: TextStyle(fontSize: 16),
                           ),
                   ),
                   const SizedBox(height: 16),
@@ -162,19 +155,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Text("Don't have an account?"),
                       TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SignupScreen(),
-                            ),
-                          );
+                          onPressed: isLoading ? null : () {
+                            context.pushReplacement(SignupScreen.routeName);
                         },
-                        child: Text(localizations.get('signup')),
+                          child: const Text('Sign Up'),
                       ),
                     ],
                   ),
                 ],
+                ),
               ),
             ),
           ),

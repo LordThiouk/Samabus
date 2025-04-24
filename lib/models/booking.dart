@@ -1,133 +1,123 @@
-enum BookingStatus {
-  pending,
-  confirmed,
-  cancelled,
-  completed,
-  refunded,
-}
-
-enum PaymentMethod {
-  orangeMoney,
-  wave,
-  card,
-}
-
-class Passenger {
-  final String fullName;
-  final String cniNumber;
-  final String? seatNumber;
-
-  Passenger({
-    required this.fullName,
-    required this.cniNumber,
-    this.seatNumber,
-  });
-
-  factory Passenger.fromJson(Map<String, dynamic> json) {
-    return Passenger(
-      fullName: json['full_name'],
-      cniNumber: json['cni_number'],
-      seatNumber: json['seat_number'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'full_name': fullName,
-      'cni_number': cniNumber,
-      'seat_number': seatNumber,
-    };
-  }
-}
+import 'passenger.dart'; // Import Passenger model
+import 'enums/booking_status.dart'; // Import enum
+import 'enums/payment_method.dart'; // Import enum
 
 class Booking {
-  final String id;
+  final String? id;
   final String tripId;
-  final String travelerId;
-  final int numSeats;
+  final String userId;
+  final List<Passenger> passengers;
   final double totalAmount;
-  final String status;
-  final DateTime bookedAt;
+  final BookingStatus status;
+  final PaymentMethod? paymentMethod;
+  final String? paymentId;
+  final DateTime? bookedAt;
+  final DateTime? updatedAt;
+  final DateTime? validatedDateTime;
+  final String? validatedBy;
+  final String? qrCode;
+  final double? platformFee;
 
   Booking({
-    required this.id,
+    this.id,
     required this.tripId,
-    required this.travelerId,
-    required this.numSeats,
+    required this.userId,
+    required this.passengers,
     required this.totalAmount,
     required this.status,
-    required this.bookedAt,
+    this.paymentMethod,
+    this.paymentId,
+    this.bookedAt,
+    this.updatedAt,
+    this.validatedDateTime,
+    this.validatedBy,
+    this.qrCode,
+    this.platformFee,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
+    // Helper to parse enum safely
+    T? _parseEnum<T>(List<T> values, String? value) {
+      if (value == null) return null;
+      try {
+        return values.firstWhere((e) => e.toString().split('.').last == value);
+      } catch (e) {
+        return null; // Or throw error / return default
+      }
+    }
+
     return Booking(
-      id: json['id'],
-      tripId: json['trip_id'],
-      travelerId: json['traveler_id'],
-      numSeats: json['num_seats'],
+      id: json['id'] as String?,
+      tripId: json['trip_id'] as String,
+      userId: json['user_id'] as String,
+      passengers: (json['passengers'] as List<dynamic>? ?? [])
+          .map((pJson) => Passenger.fromJson(pJson as Map<String, dynamic>))
+          .toList(),
       totalAmount: (json['total_amount'] as num).toDouble(),
-      status: json['status'],
-      bookedAt: DateTime.parse(json['booked_at']),
+      status: _parseEnum(BookingStatus.values, json['status'] as String?) ?? BookingStatus.pending,
+      paymentMethod: _parseEnum(PaymentMethod.values, json['payment_method'] as String?),
+      paymentId: json['payment_id'] as String?,
+      platformFee: (json['platform_fee'] as num?)?.toDouble(),
+      bookedAt: json['booking_date_time'] != null
+          ? DateTime.parse(json['booking_date_time'] as String)
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
+      validatedDateTime: json['validated_date_time'] != null
+          ? DateTime.parse(json['validated_date_time'] as String)
+          : null,
+      validatedBy: json['validated_by'] as String?,
+      qrCode: json['qr_code'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
         'trip_id': tripId,
-        'traveler_id': travelerId,
-        'num_seats': numSeats,
+        'user_id': userId,
+        'passengers': passengers.map((p) => p.toJson()).toList(),
         'total_amount': totalAmount,
-        'status': status,
-        'booked_at': bookedAt.toIso8601String(),
+        'status': status.toString().split('.').last,
+        'payment_method': paymentMethod?.toString().split('.').last,
+        'payment_id': paymentId,
+        'platform_fee': platformFee,
+        'booking_date_time': bookedAt?.toIso8601String(),
+        'validated_date_time': validatedDateTime?.toIso8601String(),
+        'validated_by': validatedBy,
+        'qr_code': qrCode,
       };
 
   Booking copyWith({
     String? id,
     String? tripId,
-    String? travelerId,
-    int? numSeats,
+    String? userId,
+    List<Passenger>? passengers,
     double? totalAmount,
-    String? status,
+    BookingStatus? status,
+    PaymentMethod? paymentMethod,
+    String? paymentId,
     DateTime? bookedAt,
+    DateTime? updatedAt,
+    DateTime? validatedDateTime,
+    String? validatedBy,
+    String? qrCode,
+    double? platformFee,
   }) {
     return Booking(
       id: id ?? this.id,
       tripId: tripId ?? this.tripId,
-      travelerId: travelerId ?? this.travelerId,
-      numSeats: numSeats ?? this.numSeats,
+      userId: userId ?? this.userId,
+      passengers: passengers ?? this.passengers,
       totalAmount: totalAmount ?? this.totalAmount,
       status: status ?? this.status,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentId: paymentId ?? this.paymentId,
       bookedAt: bookedAt ?? this.bookedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      validatedDateTime: validatedDateTime ?? this.validatedDateTime,
+      validatedBy: validatedBy ?? this.validatedBy,
+      qrCode: qrCode ?? this.qrCode,
+      platformFee: platformFee ?? this.platformFee,
     );
-  }
-
-  static BookingStatus _parseStatus(String status) {
-    switch (status) {
-      case 'pending':
-        return BookingStatus.pending;
-      case 'confirmed':
-        return BookingStatus.confirmed;
-      case 'cancelled':
-        return BookingStatus.cancelled;
-      case 'completed':
-        return BookingStatus.completed;
-      case 'refunded':
-        return BookingStatus.refunded;
-      default:
-        return BookingStatus.pending;
-    }
-  }
-
-  static PaymentMethod _parsePaymentMethod(String method) {
-    switch (method) {
-      case 'orangeMoney':
-        return PaymentMethod.orangeMoney;
-      case 'wave':
-        return PaymentMethod.wave;
-      case 'card':
-        return PaymentMethod.card;
-      default:
-        return PaymentMethod.orangeMoney;
-    }
   }
 }

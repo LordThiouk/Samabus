@@ -1,70 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/booking_provider.dart';
-import '../../utils/localization.dart';
-import 'search_screen.dart';
-import 'bookings_screen.dart';
-import 'profile_screen.dart';
+import '../../models/user.dart' as app_user;
 
-class TravelerHomeScreen extends StatefulWidget {
-  const TravelerHomeScreen({Key? key}) : super(key: key);
+class TravelerHomeScreen extends StatelessWidget {
+  const TravelerHomeScreen({super.key});
 
-  @override
-  State<TravelerHomeScreen> createState() => _TravelerHomeScreenState();
-}
-
-class _TravelerHomeScreenState extends State<TravelerHomeScreen> {
-  int _selectedIndex = 0;
-  
-  final List<Widget> _screens = [
-    const SearchScreen(),
-    const BookingsScreen(),
-    const ProfileScreen(),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserBookings();
-  }
-
-  Future<void> _loadUserBookings() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final bookingProvider = Provider.of<BookingProvider>(context, listen: false);
-    
-    if (authProvider.currentUser != null) {
-      await bookingProvider.getUserBookings(authProvider.currentUser!.id);
-    }
-  }
+  static const String routeName = '/traveler';
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
+    final authProvider = context.read<AuthProvider>();
     
     return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.search),
-            label: localizations.get('search'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.confirmation_number),
-            label: localizations.get('my_bookings'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person),
-            label: localizations.get('profile'),
+      appBar: AppBar(
+        title: const Text('Traveler Home'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              authProvider.signOut();
+              // Router redirect logic will handle navigation
+            },
+            tooltip: 'Logout',
           ),
         ],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+             Text('Welcome, Traveler!'),
+             SizedBox(height: 10),
+             Text('User ID: ${authProvider.user?.id}'),
+             Text('Role: ${authProvider.user?.role.toString().split('.').last}'),
+             // TODO: Add Traveler specific UI (Search bar, recent bookings, etc.)
+          ],
+        ),
       ),
     );
   }

@@ -22,4 +22,9 @@
 ## Offline Functionality
 - Ticket validation data (QR/CNI hashes/references) is cached locally using Hive.
 - `connectivity_plus` likely used to detect network status.
-- Background sync mechanism (details TBD) needed to push offline validation logs to Supabase upon reconnection. 
+- Background sync mechanism (details TBD) needed to push offline validation logs to Supabase upon reconnection.
+
+## Testing Patterns
+- **Unit Tests:** Use `mockito` to mock direct dependencies (e.g., `SupabaseClient` in `AuthService` tests).
+- **Widget Tests:** Use `mockito` to mock state providers (e.g., `AuthProvider` in `LoginScreen` tests) to simulate different UI states and verify widget reactions.
+- **Integration Tests:** Intended for end-to-end flow testing, including interaction with backend services (potentially mocked or using a dedicated test environment). 

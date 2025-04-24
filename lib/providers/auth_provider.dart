@@ -1,230 +1,230 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart'; // Unused
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user.dart' as app_user;
-import '../services/supabase_service.dart';
+import '../services/auth_service.dart';
+import './auth_status.dart';
 
-class AuthProvider extends ChangeNotifier {
-  final SupabaseService _supabaseService = SupabaseService();
-  app_user.User? _currentUser;
-  bool _isLoading = false;
+class AuthProvider with ChangeNotifier {
+  final AuthService _authService;
+  app_user.User? _user;
+  AuthStatus _status = AuthStatus.uninitialized;
   String? _errorMessage;
+  StreamSubscription<AuthState>? _authStateSubscription;
 
-  app_user.User? get currentUser => _currentUser;
-  bool get isLoading => _isLoading;
+  AuthProvider(this._authService, {bool skipInitialCheck = false}) {
+    _authStateSubscription = _authService.onAuthStateChange.listen(_onAuthStateChanged);
+    if (!skipInitialCheck) {
+      _checkInitialSession();
+    }
+  }
+
+  // Getters
+  AuthStatus get status => _status;
+  app_user.User? get user => _user;
   String? get errorMessage => _errorMessage;
-  bool get isAuthenticated => _currentUser != null;
-  bool get isTraveler => _currentUser?.role == app_user.UserRole.traveler;
-  bool get isTransporteur => _currentUser?.role == app_user.UserRole.transporteur;
-  bool get isAdmin => _currentUser?.role == app_user.UserRole.admin;
+  // Update isAuthenticated to reflect the final authenticated state
+  bool get isAuthenticated => _status == AuthStatus.authenticated;
 
-  Future<void> initialize() async {
-    _isLoading = true;
-    notifyListeners();
-
+  // Check initial session state without blocking constructor
+  Future<void> _checkInitialSession() async {
+     _setStatus(AuthStatus.authenticating); // Indicate we are checking
     try {
-      final supabaseUser = await _supabaseService.getCurrentUser();
-      if (supabaseUser != null) {
-        // Fetch user data from the database
-        final userData = await _supabaseService.client
-            .from('users')
-            .select()
-            .eq('id', supabaseUser.id)
-            .single();
-        
-        _currentUser = app_user.User.fromJson(userData);
+      // Access the global Supabase instance to check the initial session
+      final currentSession = Supabase.instance.client.auth.currentSession;
+      if (currentSession != null) {
+         print('AuthProvider: Initial session found. Fetching profile...');
+         _setStatus(AuthStatus.loadingProfile); // Set status before async fetch
+         await _loadUserProfile(); // Attempt to load profile
+      } else {
+         print('AuthProvider: No initial session found.');
+         _setStatus(AuthStatus.unauthenticated);
       }
-      _errorMessage = null;
     } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
+      print('AuthProvider: Error checking initial session: $e');
+      _user = null;
+      _setStatus(AuthStatus.error);
+      _errorMessage = 'Failed to initialize session.';
+    }
+  }
+
+
+  void _onAuthStateChanged(AuthState authState) async {
+    print('AuthProvider AuthState changed: ${authState.event}, session: ${authState.session != null}');
+
+    // Handle signed in, token refreshed, user updated
+    if (authState.event == AuthChangeEvent.signedIn ||
+        authState.event == AuthChangeEvent.tokenRefreshed ||
+        authState.event == AuthChangeEvent.userUpdated) {
+      if (authState.session != null) {
+        _setStatus(AuthStatus.loadingProfile); // Set status before async fetch
+        await _loadUserProfile();
+      } else {
+        // This case might occur if Supabase fires signedIn but session is null (edge case)
+        print('AuthProvider Warning: ${authState.event} event but session is null.');
+        _user = null;
+        _setStatus(AuthStatus.unauthenticated);
+      }
+    }
+    // Handle signed out, user deleted
+    else if (authState.event == AuthChangeEvent.signedOut || authState.event == AuthChangeEvent.userDeleted) {
+      _user = null;
+      _setStatus(AuthStatus.unauthenticated);
+    }
+    // Handle password recovery - user remains unauthenticated
+    else if (authState.event == AuthChangeEvent.passwordRecovery) {
+      // Keep status as unauthenticated, maybe set a message?
+       print('AuthProvider: Password recovery event.');
+       if (_status != AuthStatus.unauthenticated) {
+          _setStatus(AuthStatus.unauthenticated);
+       }
+    }
+    // Handle MFA if implemented
+    else if (authState.event == AuthChangeEvent.mfaChallengeVerified) {
+       print('AuthProvider: MFA verified event.');
+       // Should trigger a profile load similar to signedIn
+       _setStatus(AuthStatus.loadingProfile);
+       await _loadUserProfile();
+    }
+     // Note: Supabase might fire initialSession, but our _checkInitialSession covers this.
+     // We rely on subsequent signedIn or signedOut events after the initial check.
+  }
+
+  // Helper function to load user profile
+  Future<void> _loadUserProfile() async {
+    try {
+      _user = await _authService.getCurrentUserAppModel();
+      if (_user != null) {
+        _setStatus(AuthStatus.authenticated);
+        print('AuthProvider: User Profile Loaded: ${_user!.id}, Role: ${_user!.role}');
+      } else {
+        // Could happen if profile doesn't exist in our tables yet after signup
+        print('AuthProvider Warning: Authenticated but failed to fetch app user model (profile might be missing).');
+        // Keep status as loadingProfile or switch to an error/specific state?
+        // For now, treat as unauthenticated for routing purposes, but log warning.
+        _setStatus(AuthStatus.unauthenticated);
+        // Consider signing out the Supabase session if profile is mandatory?
+        // await _authService.signOut();
+      }
+    } catch (e) {
+      print('AuthProvider Error fetching user profile: $e');
+      _user = null;
+      _setStatus(AuthStatus.error);
+      _errorMessage = 'Failed to load user profile.';
+    }
+  }
+
+  // Helper to set status and notify
+  void _setStatus(AuthStatus newStatus) {
+    if (_status != newStatus) {
+      _status = newStatus;
+      if (newStatus != AuthStatus.error) {
+        _errorMessage = null; // Clear error on non-error status change
+      }
+      print('AuthProvider Status changed: $_status');
       notifyListeners();
     }
   }
+
+  // Public methods wrapping AuthService calls
 
   Future<bool> signUp({
     required String email,
     required String password,
-    required String phoneNumber,
     required app_user.UserRole role,
+    String? phone,
     String? fullName,
+    String? companyName,
   }) async {
-    _isLoading = true;
-    _errorMessage = null;
+    // Let the listener handle status changes
+    // _setStatus(AuthStatus.authenticating);
+    _errorMessage = null; // Clear previous error
     notifyListeners();
-
     try {
-      // Create auth user
-      final response = await _supabaseService.signUp(
+      await _authService.signUp(
         email: email,
         password: password,
+        role: role,
+        phone: phone,
+        fullName: fullName,
+        companyName: companyName,
       );
-
-      if (response.user == null) {
-        throw Exception('Failed to create user');
-      }
-
-      // Create user profile
-      final userData = {
-        'id': response.user!.id,
-        'email': email,
-        'phone_number': phoneNumber,
-        'full_name': fullName,
-        'role': role.toString().split('.').last,
-        'is_verified': false,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      final createdUser = await _supabaseService.createUser(userData: userData);
-      _currentUser = app_user.User.fromJson(createdUser);
-      
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
+      // Success! State update will be handled by the _onAuthStateChanged listener
+      // IF email verification is off OR after user verifies email.
+      // Until then, state remains unauthenticated or as it was.
+      print('AuthProvider: SignUp call successful for $email. Waiting for Supabase event/verification.');
+      return true; // Indicate the API call succeeded
+    } on AuthException catch (e) {
+      _errorMessage = e.message;
+      _setStatus(AuthStatus.error); // Set error status explicitly here
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'An unknown error occurred during sign up.';
+      _setStatus(AuthStatus.error); // Set error status explicitly here
+      return false;
     }
   }
 
-  Future<bool> signIn({
+  Future<bool> signInWithPassword({
     required String email,
     required String password,
   }) async {
-    _isLoading = true;
-    _errorMessage = null;
+    // Let the listener handle status changes
+    // _setStatus(AuthStatus.authenticating);
+    _errorMessage = null; // Clear previous error
     notifyListeners();
-
     try {
-      final response = await _supabaseService.signIn(
-        email: email,
-        password: password,
-      );
-
-      if (response.user == null) {
-        throw Exception('Invalid credentials');
-      }
-
-      // Get user profile
-      final userData = await _supabaseService.client
-          .from('users')
-          .select()
-          .eq('id', response.user!.id)
-          .single();
-      
-      _currentUser = app_user.User.fromJson(userData);
-      
-      notifyListeners();
+      await _authService.signInWithPassword(email: email, password: password);
+      // Success! State update handled by listener (_onAuthStateChanged -> loadingProfile -> authenticated)
+       print('AuthProvider: signInWithPassword call successful for $email.');
       return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
+    } on AuthException catch (e) {
+      _errorMessage = e.message;
+      _setStatus(AuthStatus.error); // Set error status explicitly here
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'An unknown error occurred during sign in.';
+      _setStatus(AuthStatus.error); // Set error status explicitly here
+      return false;
     }
   }
 
   Future<void> signOut() async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      await _supabaseService.signOut();
-      _currentUser = null;
+       print('AuthProvider: signOut called.');
+      await _authService.signOut();
+      // State update handled by listener
     } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      print('AuthProvider: Error during sign out: $e');
+      _errorMessage = 'Failed to sign out.';
+      _setStatus(AuthStatus.error);
     }
   }
 
-  Future<bool> updateProfile({
-    String? fullName,
-    String? phoneNumber,
-  }) async {
-    if (_currentUser == null) return false;
-
-    _isLoading = true;
+  Future<bool> sendPasswordResetEmail({required String email}) async {
     _errorMessage = null;
-    notifyListeners();
-
     try {
-      final updates = <String, dynamic>{
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-      
-      if (fullName != null) updates['full_name'] = fullName;
-      if (phoneNumber != null) updates['phone_number'] = phoneNumber;
-
-      await _supabaseService.client
-          .from('users')
-          .update(updates)
-          .eq('id', _currentUser!.id);
-
-      // Refresh user data
-      final userData = await _supabaseService.client
-          .from('users')
-          .select()
-          .eq('id', _currentUser!.id)
-          .single();
-      
-      _currentUser = app_user.User.fromJson(userData);
-      
-      notifyListeners();
+      await _authService.sendPasswordResetEmail(email: email);
+       print('AuthProvider: sendPasswordResetEmail call successful for $email.');
+      // State remains unauthenticated
       return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
+    } on AuthException catch (e) {
+      _errorMessage = e.message;
+      _setStatus(AuthStatus.unauthenticated); // Ensure state is correct (this calls notifyListeners if status changes)
+      notifyListeners(); // Reinstated: Notify UI of error message - _setStatus handles notification
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'An unknown error occurred sending password reset email.';
+      _setStatus(AuthStatus.unauthenticated); // Ensure state is correct (this calls notifyListeners if status changes)
+       notifyListeners(); // Reinstated: Notify UI of error message - _setStatus handles notification
+      return false;
     }
   }
 
-  Future<bool> verifyPhone() async {
-    if (_currentUser == null) return false;
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      // In a real app, this would send a verification code
-      // For now, we'll just mark the user as verified
-      await _supabaseService.client
-          .from('users')
-          .update({
-            'is_verified': true,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', _currentUser!.id);
-
-      // Refresh user data
-      final userData = await _supabaseService.client
-          .from('users')
-          .select()
-          .eq('id', _currentUser!.id)
-          .single();
-      
-      _currentUser = app_user.User.fromJson(userData);
-      
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  // Clean up subscription
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
   }
 }

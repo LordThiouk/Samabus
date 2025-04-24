@@ -1,4 +1,4 @@
-enum UserRole { traveler, bus_owner, admin }
+enum UserRole { traveler, transporteur, admin }
 
 class User {
   final String id; // Corresponds to Supabase Auth user ID (UUID)
@@ -31,7 +31,7 @@ class User {
     return User(
       id: json['id'], // Assuming 'id' comes from the joined auth user data
       role: UserRole.values.firstWhere(
-            (e) => e.toString().split('.').last == json['role'], // Assuming 'role' comes from public.users table
+            (e) => e.toString().split('.').last == json['role'], // Assuming 'role' comes from public.users or profile
             orElse: () => UserRole.traveler),
       createdAt: DateTime.parse(json['created_at']), // Assuming 'created_at' from public.users
       isVerified: json['email_confirmed_at'] != null || json['phone_confirmed_at'] != null, // Example from auth user data

@@ -7,24 +7,44 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:samabus/main.dart';
+import 'package:samabus/providers/auth_provider.dart';
+import 'package:samabus/providers/auth_status.dart';
+import 'package:samabus/routes/app_router.dart';
+
+@GenerateMocks([AuthProvider])
+import 'widget_test.mocks.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  // Initialize binding
+  TestWidgetsFlutterBinding.ensureInitialized(); 
+  
+  late MockAuthProvider mockAuthProvider;
+  late GoRouter testRouter;
+
+  setUp(() {
+    mockAuthProvider = MockAuthProvider();
+    // Default stubs for the mock provider
+    when(mockAuthProvider.status).thenReturn(AuthStatus.uninitialized);
+    when(mockAuthProvider.user).thenReturn(null);
+    when(mockAuthProvider.addListener(any)).thenAnswer((_) {});
+    
+    // Use the actual router logic but with the mocked provider
+    testRouter = AppRouter.createRouter(mockAuthProvider);
+  });
+
+  testWidgets('MyApp builds ok', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(
+      authProvider: mockAuthProvider,
+      appRouter: testRouter,
+    ));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that MyApp renders something (e.g., MaterialApp)
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
