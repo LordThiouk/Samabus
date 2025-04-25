@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../models/booking.dart';
-import '../../providers/booking_provider.dart';
-import '../../utils/localization.dart';
+import 'package:samabus/models/trip.dart';
+import 'package:samabus/models/passenger.dart';
+import 'package:samabus/models/enums.dart';
+import 'package:samabus/providers/booking_provider.dart';
+import 'package:samabus/utils/localization.dart';
 import '../traveler/traveler_home_screen.dart';
 
 class BookingConfirmationScreen extends StatelessWidget {
-  const BookingConfirmationScreen({Key? key}) : super(key: key);
+  const BookingConfirmationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +101,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              '${localizations.get('booking_id')}: ${booking.id.substring(0, 8)}',
+                              '${localizations.get('booking_id')}: ${booking.id!.substring(0, 8)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -155,7 +157,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 16, bottom: 8),
                               child: Text('• ${passenger.fullName}'),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -274,8 +276,10 @@ class BookingConfirmationScreen extends StatelessWidget {
         return localizations.get('orange_money');
       case PaymentMethod.wave:
         return localizations.get('wave');
-      case PaymentMethod.card:
-        return localizations.get('card');
+      case PaymentMethod.creditCard:
+        return 'Credit Card';
+      case PaymentMethod.unknown:
+        return '';
       default:
         return '';
     }

@@ -85,10 +85,7 @@ void main() {
     when(mockAuthService.signUp(
       email: anyNamed('email'),
       password: anyNamed('password'),
-      role: anyNamed('role'),
-      phone: anyNamed('phone'),
-      fullName: anyNamed('fullName'),
-      companyName: anyNamed('companyName'),
+      data: anyNamed('data'),
     )).thenAnswer((_) async {
        authStateController.add(createAuthState(AuthChangeEvent.signedIn, session: mockSession));
        return mockAuthResponse;
@@ -154,31 +151,36 @@ void main() {
 
    // --- Group: signUp ---
    group('signUp', () {
-     final testEmail = 'new@example.com';
-     final testPassword = 'newPassword';
-     final testRole = app_user.UserRole.traveler;
+     const testEmail = 'new@example.com';
+     const testPassword = 'newPassword';
+     const testRole = app_user.UserRole.traveler;
 
      test('successful signUp leads to authenticated state (after stream event)', () async {
        // Arrange
        // Stub the profile fetch needed by the listener *after* sign up succeeds
        when(mockAuthService.getCurrentUserAppModel()).thenAnswer((_) async => mockAppUserModel);
 
-       // Act: Call signUp - pass the required role
+       // Act: Call signUp - pass the required data
        final success = await authProvider.signUp(
            email: testEmail,
            password: testPassword,
-           role: testRole // Pass role
+           role: testRole,
        );
 
-       // Assert - Verify service call occurred with role
+       // Assert - Verify service call occurred with data map
        verify(mockAuthService.signUp(
            email: testEmail,
            password: testPassword,
-           role: testRole, // Verify role was passed
-           phone: anyNamed('phone'),
-           fullName: anyNamed('fullName'),
-           companyName: anyNamed('companyName'))
+           data: captureAnyNamed('data')) // Capture the data map
        ).called(1);
+
+       // Assert the captured data map contains the role
+       final capturedData = verify(mockAuthService.signUp(
+           email: anyNamed('email'),
+           password: anyNamed('password'),
+           data: captureAnyNamed('data'))).captured.last as Map<String, dynamic>?;
+       expect(capturedData, isNotNull);
+       expect(capturedData?['role'], testRole.name);
 
        // Assert: Method returns true on success
        expect(success, isTrue);
@@ -194,22 +196,19 @@ void main() {
 
       test('sets status to error and stores message on AuthException', () async {
          // Arrange
-         final exception = AuthException('Sign up failed');
-         // Override the signUp stub to throw an exception (include role)
+         const exception = AuthException('Sign up failed');
+         // Override the signUp stub to throw an exception (include data map)
          when(mockAuthService.signUp(
            email: anyNamed('email'),
            password: anyNamed('password'),
-           role: anyNamed('role'), // Include role
-           phone: anyNamed('phone'),
-           fullName: anyNamed('fullName'),
-           companyName: anyNamed('companyName'),
+           data: anyNamed('data'),
          )).thenThrow(exception);
 
-         // Act - Pass role
+         // Act - Pass data map
          final success = await authProvider.signUp(
             email: testEmail,
             password: testPassword,
-            role: testRole
+            role: testRole,
          );
 
          // Assert
@@ -222,21 +221,18 @@ void main() {
        test('sets status to error and stores generic message on other exception', () async {
          // Arrange
          final exception = Exception('Network error');
-         // Override the signUp stub to throw an exception (include role)
+         // Override the signUp stub to throw an exception (include data map)
           when(mockAuthService.signUp(
            email: anyNamed('email'),
            password: anyNamed('password'),
-           role: anyNamed('role'), // Include role
-           phone: anyNamed('phone'),
-           fullName: anyNamed('fullName'),
-           companyName: anyNamed('companyName'),
+           data: anyNamed('data'),
          )).thenThrow(exception);
 
-         // Act - Pass role
+         // Act - Pass data map
          final success = await authProvider.signUp(
             email: testEmail,
             password: testPassword,
-            role: testRole
+            role: testRole,
          );
 
          // Assert
@@ -245,12 +241,30 @@ void main() {
          expect(authProvider.errorMessage, 'An unknown error occurred during sign up.');
          expect(authProvider.user, isNull);
        });
+
+    test('signUp throws exception on error', () async {
+      // Arrange
+      const email = 'test@test.com';
+      const password = 'password';
+      const data = {'role': 'traveler', 'fullName': 'Test User', 'phoneNumber': '123456789'};
+      when(mockAuthService.signUp(email: email, password: password, data: data))
+          .thenThrow(const AuthException('User already registered'));
+
+      // Act
+      final result = await authProvider.signUp(email: email, password: password, role: app_user.UserRole.traveler);
+
+      // Assert
+      expect(result, isFalse);
+      expect(authProvider.status, AuthStatus.error);
+      expect(authProvider.errorMessage, 'User already registered');
+      expect(authProvider.user, isNull);
+    });
    });
 
    // --- Group: signInWithPassword ---
     group('signInWithPassword', () {
-       final testEmail = 'existing@example.com';
-       final testPassword = 'password123';
+       const testEmail = 'existing@example.com';
+       const testPassword = 'password123';
 
       test('successful signIn leads to authenticated state (after stream event)', () async {
           // Arrange
@@ -283,7 +297,7 @@ void main() {
 
        test('sets status to error and stores message on AuthException', () async {
           // Arrange
-          final exception = AuthException('Invalid credentials');
+          const exception = AuthException('Invalid credentials');
           // Override signIn stub to throw
           when(mockAuthService.signInWithPassword(email: anyNamed('email'), password: anyNamed('password')))
               .thenThrow(exception);
@@ -366,7 +380,7 @@ void main() {
 
    // --- Group: sendPasswordResetEmail ---
     group('sendPasswordResetEmail', () {
-      final testEmail = 'reset@example.com';
+      const testEmail = 'reset@example.com';
 
        test('calls service sendPasswordResetEmail and returns true on success', () async {
          // Arrange: Uses default success stub from setUp
@@ -385,9 +399,8 @@ void main() {
         test('sendPasswordResetEmail fails (AuthException) returns false', () async {
           // Arrange
           // notifyCompleter = Completer<void>(); // REMOVED
-          final exceptionMessage = 'User not found';
           when(mockAuthService.sendPasswordResetEmail(email: 'reset@example.com'))
-              .thenThrow(AuthException(exceptionMessage));
+              .thenThrow(const AuthException('User not found'));
 
           // Act
           final result = await authProvider.sendPasswordResetEmail(email: 'reset@example.com');
@@ -403,7 +416,7 @@ void main() {
          test('sendPasswordResetEmail fails (Generic Exception) returns false', () async {
            // Arrange
            // notifyCompleter = Completer<void>(); // REMOVED
-           final exceptionMessage = 'An unknown error occurred sending password reset email.';
+           const exceptionMessage = 'An unknown error occurred sending password reset email.';
            when(mockAuthService.sendPasswordResetEmail(email: 'reset@example.com'))
                .thenThrow(Exception('Something went wrong'));
 
@@ -500,7 +513,7 @@ void main() {
       // TEMPORARILY DISABLED - Logic merged into 'signUp successful...'
       test('DISABLED_signUp sets status to authenticating and calls service signUp', () async {
          // Arrange
-         when(mockAuthService.signUp(email: anyNamed('email'), password: anyNamed('password'), role: anyNamed('role'), phone: anyNamed('phone'), fullName: anyNamed('fullName'), companyName: anyNamed('companyName')))
+         when(mockAuthService.signUp(email: anyNamed('email'), password: anyNamed('password'), data: anyNamed('data')))
              .thenAnswer((_) async => AuthResponse(session: null, user: null)); // Mock successful call
 
          // Act
@@ -514,7 +527,10 @@ void main() {
          await future;
 
          // Assert service method was called
-         verify(mockAuthService.signUp(email: 'new@example.com', password: 'newPassword', role: app_user.UserRole.traveler, phone: anyNamed('phone'), fullName: anyNamed('fullName'), companyName: anyNamed('companyName'))).called(1);
+         verify(mockAuthService.signUp(email: 'new@example.com', password: 'newPassword', data: captureAnyNamed('data'))).called(1);
+         // Assert the captured data map contains the role
+         final capturedData = verify(mockAuthService.signUp(email: anyNamed('email'), password: anyNamed('password'), data: captureAnyNamed('data'))).captured.last as Map<String, dynamic>?;
+         expect(capturedData?['role'], app_user.UserRole.traveler.name);
          // Final state depends on the listener, tested elsewhere
        });
        
@@ -526,12 +542,15 @@ void main() {
         final result = await authProvider.signUp(
           email: 'new@example.com',
           password: 'password',
-          role: app_user.UserRole.traveler,
+          role: app_user.UserRole.traveler, // Pass role directly
         );
 
         // Assert: Method returns true, service called
         expect(result, isTrue);
-        verify(mockAuthService.signUp(email: 'new@example.com', password: 'password', role: app_user.UserRole.traveler, phone: null, fullName: null, companyName: null)).called(1);
+        verify(mockAuthService.signUp(email: 'new@example.com', password: 'password', data: captureAnyNamed('data'))).called(1);
+        // Assert the captured data map contains the role
+        final capturedData = verify(mockAuthService.signUp(email: anyNamed('email'), password: anyNamed('password'), data: captureAnyNamed('data'))).captured.last as Map<String, dynamic>?;
+        expect(capturedData?['role'], app_user.UserRole.traveler.name);
         
         // Assert: State becomes authenticated AFTER listener processes event AND profile load
         await untilCalled(mockAuthService.getCurrentUserAppModel()); // Wait for profile load trigger

@@ -1,6 +1,7 @@
 import 'passenger.dart'; // Import Passenger model
-import 'enums/booking_status.dart'; // Import enum
-import 'enums/payment_method.dart'; // Import enum
+// import 'enums/booking_status.dart'; // Import enum - REMOVE
+// import 'enums/payment_method.dart'; // Import enum - REMOVE
+import 'enums.dart'; // <<< ADD THIS
 
 class Booking {
   final String? id;
@@ -37,7 +38,7 @@ class Booking {
 
   factory Booking.fromJson(Map<String, dynamic> json) {
     // Helper to parse enum safely
-    T? _parseEnum<T>(List<T> values, String? value) {
+    T? parseEnum<T>(List<T> values, String? value) {
       if (value == null) return null;
       try {
         return values.firstWhere((e) => e.toString().split('.').last == value);
@@ -54,8 +55,8 @@ class Booking {
           .map((pJson) => Passenger.fromJson(pJson as Map<String, dynamic>))
           .toList(),
       totalAmount: (json['total_amount'] as num).toDouble(),
-      status: _parseEnum(BookingStatus.values, json['status'] as String?) ?? BookingStatus.pending,
-      paymentMethod: _parseEnum(PaymentMethod.values, json['payment_method'] as String?),
+      status: parseEnum(BookingStatus.values, json['status'] as String?) ?? BookingStatus.pending,
+      paymentMethod: parseEnum(PaymentMethod.values, json['payment_method'] as String?),
       paymentId: json['payment_id'] as String?,
       platformFee: (json['platform_fee'] as num?)?.toDouble(),
       bookedAt: json['booking_date_time'] != null

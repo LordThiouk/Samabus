@@ -1,4 +1,4 @@
-import 'dart:async'; // Import for Completer
+// Import for Completer
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -94,7 +94,7 @@ void main() {
   testWidgets('Calls authProvider.sendPasswordResetEmail on valid submission', (WidgetTester tester) async {
     // Arrange
     await tester.pumpWidget(createForgotPasswordScreen(mockAuthProvider: mockAuthProvider));
-    final testEmail = 'test@example.com';
+    const testEmail = 'test@example.com';
 
     // Act
     await tester.enterText(find.widgetWithText(TextField, 'Email'), testEmail);
@@ -108,7 +108,7 @@ void main() {
   testWidgets('Shows success message and hides form on successful submission', (WidgetTester tester) async {
     // Arrange
     await tester.pumpWidget(createForgotPasswordScreen(mockAuthProvider: mockAuthProvider));
-    final testEmail = 'success@example.com';
+    const testEmail = 'success@example.com';
     // Mock returns true by default in setUp
 
     // Act
@@ -125,7 +125,7 @@ void main() {
 
   testWidgets('Shows error message when status is error', (WidgetTester tester) async {
     // Arrange
-    final errorMessage = 'User not found';
+    const errorMessage = 'User not found';
     when(mockAuthProvider.sendPasswordResetEmail(email: anyNamed('email')))
         .thenAnswer((_) async => false); // Mock failure
     when(mockAuthProvider.status).thenReturn(AuthStatus.error);

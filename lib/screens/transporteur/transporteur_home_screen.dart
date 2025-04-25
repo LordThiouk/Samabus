@@ -40,8 +40,8 @@ class TransporteurHomeScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Welcome, Transporteur!'),
-          SizedBox(height: 10),
+          const Text('Welcome, Transporteur!'),
+          const SizedBox(height: 10),
           Text('User ID: ${user?.id}'),
           Text('Company: ${user?.companyName ?? "N/A"}'),
           Text('Role: ${user?.role.toString().split('.').last}'),

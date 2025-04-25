@@ -16,10 +16,20 @@
 - `connectivity_plus` (^4.0.2) - Network status checking
 - `crypto` (^3.0.3) - Cryptographic functions (potentially for data security/hashing)
 
+## Development Dependencies (`pubspec.yaml`)
+- `flutter_test`
+- `integration_test`
+- `flutter_lints` (^3.0.0)
+- `mockito` (^5.4.4)
+- `build_runner` (^2.4.9) - *Note: Downgraded from >=2.4.10 due to Dart SDK 3.2.3 incompatibility.*
+
 ## Development Setup
 - **IDE:** VS Code recommended (with Flutter & Dart extensions)
 - **Version Control:** Git (repository likely hosted on GitHub)
 - **Task Management:** Task Master AI (`task-master-ai` npm package installed locally, run via `npx`)
+- **Package Management (Windows):** Scoop (used to install Supabase CLI)
+- **Backend CLI:** Supabase CLI (v2.22.6 installed via Scoop)
+- **Dart SDK:** 3.2.3 (via Flutter SDK)
 
 ## Technical Constraints
 - Offline ticket validation must work for up to 24 hours.

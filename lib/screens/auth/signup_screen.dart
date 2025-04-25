@@ -31,8 +31,8 @@ class _SignupScreenState extends State<SignupScreen> {
   app_user.UserRole _selectedRole = app_user.UserRole.traveler; // Default to traveler
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  bool _signupAttempted = false; // To show success message
-  bool _signupSuccess = false;
+  bool _signupAttempted = false; // To show success/error message
+  bool _signupSuccess = false; // To show success message specifically
 
   @override
   void dispose() {
@@ -52,38 +52,43 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     if (!_formKey.currentState!.validate()) {
+       setState(() => _signupAttempted = false); // Reset if form invalid immediately
       return;
     }
 
     final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      role: _selectedRole,
-      phone: _phoneController.text.trim(),
-        fullName: _fullNameController.text.trim(),
-      // Only pass companyName if role is transporteur
-      companyName: _selectedRole == app_user.UserRole.transporteur
+    // Prepare optional data based on input
+    final String? phone = _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null;
+    final String? fullName = _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null;
+    final String? companyName = _selectedRole == app_user.UserRole.transporteur && _companyNameController.text.trim().isNotEmpty
           ? _companyNameController.text.trim()
-          : null,
+          : null;
+
+    final success = await authProvider.signUp(
+        email: _emailController.text.trim(), // Primary identifier
+        password: _passwordController.text,
+        role: _selectedRole,
+        // Pass other details as optional parameters
+        phone: phone,
+        fullName: fullName,
+        companyName: companyName,
       );
 
       if (mounted) {
-      setState(() {
+        // Update success state *after* the async call completes
+        setState(() {
          _signupSuccess = success;
-         if (success) {
-           // Clear form on success?
-           // _formKey.currentState?.reset(); 
-         }
+         // We keep _signupAttempted = true regardless of success/failure here
        });
       }
-     // Error message will be displayed via the watched authProvider.errorMessage
-     // Success message is handled by _signupSuccess state
+     // Error/Success message display is handled in the build method based on state
+     // Navigation on success is handled by router listening to AuthProvider state changes
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    // isLoading should ideally reflect AuthProvider status directly
     final isLoading = authProvider.status == AuthStatus.authenticating;
 
     return Scaffold(
@@ -99,63 +104,67 @@ class _SignupScreenState extends State<SignupScreen> {
             } else {
               context.go(LoginScreen.routeName);
             }
-            // Navigator.of(context).canPop()
-            //                 ? Navigator.of(context).pop()
-            //                 : Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
           },
         ),
       ),
       body: LoadingOverlay(
         isLoading: isLoading,
         child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
                     'Create your account',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
                   // Role Selection
                   Text('I am a:', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                SegmentedButton<app_user.UserRole>(
-                  segments: const <ButtonSegment<app_user.UserRole>>[
-                    ButtonSegment<app_user.UserRole>(
-                      value: app_user.UserRole.traveler,
-                        label: Text('Traveler'),
-                        icon: Icon(Icons.person_outline),
-                    ),
-                    ButtonSegment<app_user.UserRole>(
+                  const SizedBox(height: 8),
+                  SegmentedButton<app_user.UserRole>(
+                    // Use Key for testing if needed
+                    // key: const Key('signup_role_selector'),
+                    segments: const <ButtonSegment<app_user.UserRole>>[
+                      ButtonSegment<app_user.UserRole>(
+                        value: app_user.UserRole.traveler,
+                        label: const Text('Traveler'),
+                        icon: const Icon(Icons.person_outline),
+                      ),
+                      ButtonSegment<app_user.UserRole>(
                         value: app_user.UserRole.transporteur, // Updated value
-                        label: Text('Transporteur'), // Updated label
-                        icon: Icon(Icons.directions_bus),
-                    ),
-                  ],
-                  selected: <app_user.UserRole>{_selectedRole},
-                  onSelectionChanged: (Set<app_user.UserRole> newSelection) {
-                    setState(() {
-                      _selectedRole = newSelection.first;
-                    });
-                  },
-                  style: ButtonStyle(
-                      // Simple styling for selected state
+                        label: const Text('Transporteur'), // Updated label
+                        icon: const Icon(Icons.directions_bus),
+                      ),
+                    ],
+                    selected: <app_user.UserRole>{_selectedRole},
+                    onSelectionChanged: (Set<app_user.UserRole> newSelection) {
+                      setState(() {
+                        _selectedRole = newSelection.first;
+                        // Clear company name if switching away from transporteur? Optional.
+                        if (_selectedRole != app_user.UserRole.transporteur) {
+                          _companyNameController.clear();
+                        }
+                      });
+                    },
+                    // Style for better visual feedback
+                    style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
-                        return states.contains(MaterialState.selected) ? Theme.of(context).colorScheme.primary : null;
+                        return states.contains(MaterialState.selected) ? Theme.of(context).colorScheme.primary.withOpacity(0.2) : null;
                       }),
-                    foregroundColor: MaterialStateProperty.resolveWith<Color?>((Set<MaterialState> states) {
-                         return states.contains(MaterialState.selected) ? Theme.of(context).colorScheme.onPrimary : null;
+                      side: MaterialStateProperty.resolveWith<BorderSide?>((Set<MaterialState> states) {
+                        return BorderSide(color: states.contains(MaterialState.selected) ? Theme.of(context).colorScheme.primary : Colors.grey);
                       }),
                     ),
                   ),
                   const SizedBox(height: 16),
                   // --- Input Fields ---
                   CustomTextField(
+                    key: const Key('signup_fullname'),
                     controller: _fullNameController,
                     labelText: 'Full Name',
                     prefixIcon: Icons.person_outline,
@@ -168,12 +177,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 16),
                   // Conditionally show Company Name
-                  if (_selectedRole == app_user.UserRole.transporteur) ...[ // Updated check
+                  if (_selectedRole == app_user.UserRole.transporteur) ...[
                      CustomTextField(
+                      key: const Key('signup_company_name'),
                       controller: _companyNameController,
                       labelText: 'Company Name',
                       prefixIcon: Icons.business_center_outlined,
                       validator: (value) {
+                         // Only validate if transporteur is selected
                          if (_selectedRole == app_user.UserRole.transporteur && (value == null || value.trim().isEmpty)) { // Updated check
                            return 'Please enter your company name';
                       }
@@ -183,6 +194,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 16),
                   ],
                   CustomTextField(
+                    key: const Key('signup_email'),
                     controller: _emailController,
                     labelText: 'Email',
                     prefixIcon: Icons.email_outlined,
@@ -196,13 +208,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
+                    key: const Key('signup_phone'),
                     controller: _phoneController,
                     labelText: 'Phone Number',
                      prefixIcon: Icons.phone_outlined,
-                    // hintText: 'e.g., 771234567',
                     keyboardType: TextInputType.phone,
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty || value.length < 9) { // Basic check
+                      // Basic validation - consider more robust checks
+                      if (value == null || value.trim().isEmpty || !RegExp(r'^\+?[0-9]{7,}$').hasMatch(value.trim())) {
                         return 'Please enter a valid phone number';
                       }
                       return null;
@@ -210,6 +223,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
+                    key: const Key('signup_password'),
                     controller: _passwordController,
                     labelText: 'Password',
                     prefixIcon: Icons.lock_outline,
@@ -226,6 +240,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                    const SizedBox(height: 16),
                    CustomTextField(
+                    key: const Key('signup_confirm_password'),
                     controller: _confirmPasswordController,
                     labelText: 'Confirm Password',
                     prefixIcon: Icons.lock_outline,
@@ -244,66 +259,65 @@ class _SignupScreenState extends State<SignupScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  // --- Feedback Area ---
-                  if (_signupAttempted && _signupSuccess)
-                     const Padding(
-                       padding: EdgeInsets.only(bottom: 16.0),
-                       child: Text(
-                         'Signup successful! Check email/SMS for verification.',
-                         style: TextStyle(color: Colors.green),
-                         textAlign: TextAlign.center,
-                  ),
-                ),
-                  if (authProvider.status == AuthStatus.error && authProvider.errorMessage != null)
-                  Padding(
+
+                  // --- Feedback Area (Original Version) ---
+                  if (_signupAttempted && !isLoading && authProvider.status == AuthStatus.error && authProvider.errorMessage != null)
+                    Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
+                      child: Text(
                         authProvider.errorMessage!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  // --- Submit Button ---
-                  ElevatedButton(
-                    onPressed: isLoading ? null : _submitSignup,
-                        style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
+                        style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
                       ),
-                    child: const Text('Sign Up'),
+                    ),
+                  if (_signupAttempted && _signupSuccess)
+                     Padding(
+                       padding: const EdgeInsets.only(bottom: 16.0),
+                       child: Text(
+                         'Signup successful! Check email/SMS for verification if required.',
+                         style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                         textAlign: TextAlign.center,
+                       ),
+                     ),
+
+                  // Sign Up Button
+                  ElevatedButton(
+                    key: const Key('signup_button'),
+                    onPressed: isLoading ? null : _submitSignup,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0), // Adjust radius as needed
+                      ),
+                    ),
+                    child: const Text('Sign Up', style: TextStyle(fontSize: 16)),
                   ),
                   const SizedBox(height: 16),
-                  // --- Back to Login ---
-                   Row(
+                  // Link to Login
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text("Already have an account?"),
-                TextButton(
+                      TextButton(
+                        // Use Key for testing if needed
+                        // key: const Key('signup_login_link'),
                         onPressed: isLoading ? null : () {
-                          // Use go_router to navigate
-                           if (context.canPop()) {
+                          if (context.canPop()) {
                              context.pop();
                            } else {
                              context.go(LoginScreen.routeName);
                            }
-                          // if (Navigator.canPop(context)) {
-                          //   Navigator.pop(context);
-                          // } else {
-                          //   Navigator.pushReplacementNamed(context, LoginScreen.routeName);
-                          // }
                         },
                         child: const Text('Login'),
-                ),
-              ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+                ],   // Closes Column children
+              ),     // Closes Column
+            ),       // Closes Form
+          ),         // Closes SingleChildScrollView
+        ),           // Closes SafeArea
+      ),             // Closes LoadingOverlay
+    );               // Closes Scaffold
   }
 }

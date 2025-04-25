@@ -17,7 +17,7 @@ import 'login_screen_test.mocks.dart';
 // Helper function to pump the widget tree with necessary providers and routing
 Widget createLoginScreen({required MockAuthProvider mockAuthProvider, MockGoRouter? mockGoRouter}) {
   // Create a minimal GoRouter setup for testing navigation triggers
-  final router = mockGoRouter ?? MockGoRouter(); // Use mock if provided
+  // final router = mockGoRouter ?? MockGoRouter(); // REMOVE THIS LINE
 
   // Define minimal routes needed for navigation FROM login screen
   // Use dummy builders as we won't actually navigate *to* them in *this* test file
@@ -57,13 +57,11 @@ Widget createLoginScreen({required MockAuthProvider mockAuthProvider, MockGoRout
 
 void main() {
   late MockAuthProvider mockAuthProvider;
-  late MockGoRouter mockGoRouter; // Mock router for verifying navigation
 
   setUp(() {
     mockAuthProvider = MockAuthProvider();
-    mockGoRouter = MockGoRouter();
 
-    // Default stub for auth status (unauthenticated)
+    // Stub initial state
     when(mockAuthProvider.status).thenReturn(AuthStatus.unauthenticated);
     when(mockAuthProvider.errorMessage).thenReturn(null);
   });
@@ -148,7 +146,7 @@ void main() {
 
   testWidgets('Displays error message when status is error', (WidgetTester tester) async {
     // Arrange
-    final errorMessage = 'Invalid credentials';
+    const errorMessage = 'Invalid credentials';
     when(mockAuthProvider.status).thenReturn(AuthStatus.error);
     when(mockAuthProvider.errorMessage).thenReturn(errorMessage);
     await tester.pumpWidget(createLoginScreen(mockAuthProvider: mockAuthProvider));
@@ -162,8 +160,7 @@ void main() {
    testWidgets('Navigates to Forgot Password screen on tap', (WidgetTester tester) async {
      // Arrange
      // Use a MockGoRouter to verify navigation calls
-     final mockGoRouter = MockGoRouter();
-     await tester.pumpWidget(createLoginScreen(mockAuthProvider: mockAuthProvider, mockGoRouter: mockGoRouter));
+     await tester.pumpWidget(createLoginScreen(mockAuthProvider: mockAuthProvider, mockGoRouter: MockGoRouter())); // Use MockGoRouter() directly if needed
 
      // Need to mock context.push - This is tricky in widget tests without a real router.
      // A common approach is to test the callback directly if possible,
@@ -179,8 +176,7 @@ void main() {
 
     testWidgets('Navigates to Sign Up screen on tap', (WidgetTester tester) async {
       // Arrange
-      final mockGoRouter = MockGoRouter();
-      await tester.pumpWidget(createLoginScreen(mockAuthProvider: mockAuthProvider, mockGoRouter: mockGoRouter));
+      await tester.pumpWidget(createLoginScreen(mockAuthProvider: mockAuthProvider, mockGoRouter: MockGoRouter())); // Use MockGoRouter() directly if needed
 
       // Act
       // await tester.tap(find.widgetWithText(TextButton, 'Sign Up'));

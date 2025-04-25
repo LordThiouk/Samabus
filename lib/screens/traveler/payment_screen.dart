@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../models/booking.dart';
 import '../../providers/booking_provider.dart';
 import '../../utils/localization.dart';
 import 'booking_confirmation_screen.dart';
+import '../../models/enums.dart';
 
 class PaymentScreen extends StatefulWidget {
-  const PaymentScreen({Key? key}) : super(key: key);
+  const PaymentScreen({super.key});
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -48,7 +48,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
 
     final success = await bookingProvider.processPayment(
-      bookingId: bookingProvider.currentBooking!.id,
+      bookingId: bookingProvider.currentBooking!.id!,
       paymentMethod: _selectedPaymentMethod,
     );
 
@@ -167,7 +167,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 // Credit/Debit Card
                 _buildPaymentMethodCard(
                   context,
-                  PaymentMethod.card,
+                  PaymentMethod.creditCard,
                   'assets/images/credit_card.png',
                   localizations.get('card'),
                 ),
@@ -205,7 +205,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(localizations.get('subtotal')),
-                            Text(currencyFormat.format(booking.totalAmount - booking.platformFee)),
+                            Text(currencyFormat.format(booking.totalAmount - (booking.platformFee ?? 0.0))),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -213,7 +213,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(localizations.get('platform_fee')),
-                            Text(currencyFormat.format(booking.platformFee)),
+                            Text(currencyFormat.format(booking.platformFee ?? 0.0)),
                           ],
                         ),
                         const Divider(height: 24),

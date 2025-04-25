@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/booking.dart';
+import '../models/passenger.dart';
+import '../models/enums.dart';
 import '../utils/qr_generator.dart';
 
 class BookingService {
@@ -50,7 +52,7 @@ class BookingService {
       totalAmount: totalAmount,
       platformFee: platformFee,
       status: BookingStatus.pending,
-      bookingDateTime: DateTime.now(),
+      bookedAt: DateTime.now(),
       qrCode: qrCode,
     );
   }

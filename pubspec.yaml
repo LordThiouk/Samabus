@@ -28,9 +28,9 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
-  flutter_lints: ^2.0.0 # Example linter, adjust if needed
+  flutter_lints: ^3.0.0
   mockito: ^5.4.4 # Add mockito
-  build_runner: ^2.4.9 # Downgrade build_runner to ^2.4.9
+  build_runner: 2.4.9 # Add build_runner
 
 flutter:
   uses-material-design: true

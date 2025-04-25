@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/auth_status.dart';
-import '../../utils/app_localizations.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/loading_overlay.dart';
 import 'signup_screen.dart';
@@ -38,10 +37,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authProvider = context.read<AuthProvider>();
       
-    await authProvider.signInWithPassword(
+    final success = await authProvider.signInWithPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+    if (!success && mounted) {
+      final errorMessage = authProvider.errorMessage ?? 'Login failed. Please try again.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -68,10 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Theme.of(context).primaryColor,
                   ),
                   const SizedBox(height: 24),
-                  Text(
+                  const Text(
                       'SamaBus',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
@@ -127,16 +136,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                     const SizedBox(height: 16),
-                    if (authProvider.status == AuthStatus.error && authProvider.errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Text(
-                          authProvider.errorMessage!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.error),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
                   ElevatedButton(
+                      key: const Key('login_button'),
                       onPressed: isLoading ? null : _submitLogin,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),

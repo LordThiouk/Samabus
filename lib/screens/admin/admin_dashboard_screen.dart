@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/user.dart' as app_user;
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -31,8 +30,8 @@ class AdminDashboardScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Welcome, Admin!'),
-             SizedBox(height: 10),
+            const Text('Welcome, Admin!'),
+             const SizedBox(height: 10),
             Text('User ID: ${authProvider.user?.id}'),
              Text('Role: ${authProvider.user?.role.toString().split('.').last}'),
             // TODO: Add Admin specific UI (User Mgmt, Transporter Mgmt, Bookings, Finance, etc.)

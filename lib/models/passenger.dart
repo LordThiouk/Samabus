@@ -1,63 +1,58 @@
+/// Represents a passenger associated with a booking.
 class Passenger {
-  final String? id; // UUID - Nullable for creation
-  final String bookingId; // UUID
-  final String? seatNumber; // Added
-  final String fullName; // Renamed from name
-  final String cni; // Needs secure handling
-  final String? qrCodeData; // Renamed from qrCode
-  final DateTime? createdAt; // Added
+  final String id; // Could be UUID generated locally or by backend
+  final String bookingId; // Foreign key to the Booking
+  final String fullName;
+  final String cni; // Carte Nationale d'Identité (National ID Card number)
+  final String? qrCodeData; // Data embedded in the QR code for this passenger
 
   Passenger({
-    this.id,
+    required this.id,
     required this.bookingId,
-    this.seatNumber, // Added
-    required this.fullName, // Renamed
+    required this.fullName,
     required this.cni,
-    this.qrCodeData, // Renamed
-    this.createdAt, // Added
+    this.qrCodeData,
   });
 
+  // Factory constructor for creating a new Passenger instance from a map (e.g., from JSON).
   factory Passenger.fromJson(Map<String, dynamic> json) {
     return Passenger(
-      id: json['id'] as String?,
+      id: json['id'] as String,
       bookingId: json['booking_id'] as String,
-      seatNumber: json['seat_number'] as String?, // Added
-      fullName: json['full_name'] as String, // Renamed key
+      fullName: json['full_name'] as String,
       cni: json['cni'] as String,
-      qrCodeData: json['qr_code_data'] as String?, // Renamed key
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null, // Added
+      qrCodeData: json['qr_code_data'] as String?,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        // 'id' usually not sent for creation
-        'booking_id': bookingId,
-        'seat_number': seatNumber, // Added
-        'full_name': fullName, // Renamed
-        'cni': cni,
-        'qr_code_data': qrCodeData, // Renamed
-        // createdAt handled by DB
-      };
-
-  Passenger copyWith({
-    String? id,
-    String? bookingId,
-    String? seatNumber, // Added
-    String? fullName, // Renamed
-    String? cni,
-    String? qrCodeData, // Renamed
-    DateTime? createdAt, // Added
-  }) {
-    return Passenger(
-      id: id ?? this.id,
-      bookingId: bookingId ?? this.bookingId,
-      seatNumber: seatNumber ?? this.seatNumber, // Added
-      fullName: fullName ?? this.fullName, // Renamed
-      cni: cni ?? this.cni,
-      qrCodeData: qrCodeData ?? this.qrCodeData, // Renamed
-      createdAt: createdAt ?? this.createdAt, // Added
-    );
+  // Method for converting a Passenger instance into a map (e.g., for JSON serialization).
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'booking_id': bookingId,
+      'full_name': fullName,
+      'cni': cni,
+      'qr_code_data': qrCodeData,
+    };
   }
+
+  @override
+  String toString() {
+    return 'Passenger{id: $id, bookingId: $bookingId, fullName: $fullName, cni: $cni, qrCodeData: $qrCodeData}';
+  }
+
+  // Optional: Implement equality operator and hashCode if needed for comparisons or use in Sets/Maps.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Passenger &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          bookingId == other.bookingId &&
+          fullName == other.fullName &&
+          cni == other.cni;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^ bookingId.hashCode ^ fullName.hashCode ^ cni.hashCode;
 } 

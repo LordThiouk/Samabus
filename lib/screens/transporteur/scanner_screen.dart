@@ -6,7 +6,7 @@ import '../../providers/offline_sync_provider.dart';
 import '../../utils/localization.dart';
 
 class ScannerScreen extends StatefulWidget {
-  const ScannerScreen({Key? key}) : super(key: key);
+  const ScannerScreen({super.key});
 
   @override
   State<ScannerScreen> createState() => _ScannerScreenState();
@@ -42,7 +42,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
       _controller = controller;
     });
     
-    controller.scannedDataStream.listen((scanData) {
+    final authProvider = context.read<AuthProvider>();
+    controller.scannedDataStream.listen((scanData) async {
       if (!_isScanning) return;
       
       setState(() {
@@ -50,20 +51,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
         _scannedCode = scanData.code;
       });
       
-      _validateTicket(_scannedCode!);
+      if (_scannedCode != null && _scannedCode!.isNotEmpty) {
+        controller.pauseCamera();
+        final bookingId = _scannedCode!.split(':')[0];
+        final validatedBy = authProvider.user?.id ?? 'unknown_operator';
+        _validateTicket(bookingId, validatedBy);
+      }
     });
   }
 
-  Future<void> _validateTicket(String code) async {
+  Future<void> _validateTicket(String bookingId, String validatedBy) async {
     final offlineSyncProvider = Provider.of<OfflineSyncProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
-    // Extract booking ID from QR code
-    final bookingId = code.split(':')[0];
     
     final success = await offlineSyncProvider.validateTicketOffline(
       bookingId: bookingId,
-      validatedBy: authProvider.currentUser!.id,
+      validatedBy: validatedBy,
     );
     
     setState(() {
@@ -212,7 +214,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             cutOutSize: 300,
           ),
         ),
-        Positioned(
+        const Positioned(
           bottom: 16,
           child: Text(
             'Scan QR code on ticket',

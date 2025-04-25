@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// Represents the authentication state of the user.
 enum AuthStatus {

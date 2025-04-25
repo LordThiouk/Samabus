@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../models/booking.dart';
+import '../../models/passenger.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/trip_provider.dart';
 import '../../providers/booking_provider.dart';
@@ -9,7 +9,7 @@ import '../../utils/localization.dart';
 import 'payment_screen.dart';
 
 class PassengerInfoScreen extends StatefulWidget {
-  const PassengerInfoScreen({Key? key}) : super(key: key);
+  const PassengerInfoScreen({super.key});
 
   @override
   State<PassengerInfoScreen> createState() => _PassengerInfoScreenState();
@@ -61,26 +61,32 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final bookingProvider = Provider.of<BookingProvider>(context, listen: false);
       
-      if (tripProvider.selectedTrip == null || authProvider.currentUser == null) {
+      if (tripProvider.selectedTrip == null || authProvider.user == null) {
         return;
       }
       
       final trip = tripProvider.selectedTrip!;
       
-      // Create passenger list
-      final passengers = _passengers.map((form) {
+      List<Passenger> passengers = List.generate(_passengerCount, (index) {
         return Passenger(
-          fullName: form.nameController.text.trim(),
-          cniNumber: form.cniController.text.trim(),
+          id: 'temp-${DateTime.now().millisecondsSinceEpoch}-$index',
+          bookingId: 'temp-booking',
+          fullName: _passengers[index].nameController.text.trim(),
+          cni: _passengers[index].cniController.text.trim(),
         );
       }).toList();
       
-      // Create booking
+      final String? userId = authProvider.user?.id;
+      if (userId == null) {
+        _showErrorDialog(context, 'User ID not found. Please log in again.');
+        return;
+      }
+      
       final success = await bookingProvider.createBooking(
-        userId: authProvider.currentUser!.id,
-        tripId: trip.id,
+        userId: userId,
+        tripId: trip.id!,
         passengers: passengers,
-        farePerSeat: trip.fare,
+        farePerSeat: trip.pricePerSeat,
       );
       
       if (!mounted) return;
@@ -144,7 +150,7 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${trip.departureCity} → ${trip.arrivalCity}',
+                          '${trip.departureCity} → ${trip.destinationCity}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -152,13 +158,13 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          DateFormat('EEEE, MMMM d • HH:mm').format(trip.departureDateTime),
+                          DateFormat('EEE, MMM d, yyyy HH:mm').format(trip.departureTimestamp),
                         ),
                       ],
                     ),
                   ),
                   Text(
-                    currencyFormat.format(trip.fare),
+                    currencyFormat.format(trip.pricePerSeat),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,
@@ -216,7 +222,7 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text('${localizations.get('fare')} x $_passengerCount'),
-                              Text(currencyFormat.format(trip.fare * _passengerCount)),
+                              Text(currencyFormat.format(trip.pricePerSeat * _passengerCount)),
                             ],
                           ),
                           const Divider(height: 24),
@@ -228,7 +234,7 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                currencyFormat.format(trip.fare * _passengerCount),
+                                currencyFormat.format(trip.pricePerSeat * _passengerCount),
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -344,6 +350,23 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    final localizations = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations.get('error')),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localizations.get('ok')),
+          ),
+        ],
       ),
     );
   }

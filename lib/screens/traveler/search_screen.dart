@@ -7,7 +7,8 @@ import '../../utils/localization.dart';
 import 'trip_list_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  // const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key}); // Use super parameters
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();

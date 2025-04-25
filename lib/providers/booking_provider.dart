@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/booking.dart';
-import '../models/passenger.dart';
-import '../models/enums/booking_status.dart';
-import '../models/enums/payment_method.dart';
-import '../services/supabase_service.dart';
-import '../config/app_config.dart';
-import '../utils/qr_generator.dart';
+import 'package:samabus/models/booking.dart';
+import 'package:samabus/models/passenger.dart';
+import 'package:samabus/models/enums.dart';
+import 'package:samabus/services/supabase_service.dart';
+import 'package:samabus/config/app_config.dart';
+import 'package:samabus/utils/qr_generator.dart';
 
 class BookingProvider extends ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();

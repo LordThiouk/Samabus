@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/booking.dart';
 import '../services/booking_service.dart';
+import 'package:samabus/models/enums.dart';
 
 class OfflineSyncProvider extends ChangeNotifier {
   final BookingService _bookingService = BookingService();
@@ -129,7 +130,7 @@ class OfflineSyncProvider extends ChangeNotifier {
         
         // Update on server
         await _bookingService.validateTicket(
-          bookingId: ticket.id,
+          bookingId: ticket.id!,
           validatedBy: ticket.validatedBy!,
           validatedDateTime: ticket.validatedDateTime!,
         );

@@ -81,10 +81,7 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
   _i4.Future<_i2.AuthResponse> signUp({
     required String? email,
     required String? password,
-    required _i5.UserRole? role,
-    String? phone,
-    String? fullName,
-    String? companyName,
+    required Map<String, dynamic>? data,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -93,10 +90,7 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
           {
             #email: email,
             #password: password,
-            #role: role,
-            #phone: phone,
-            #fullName: fullName,
-            #companyName: companyName,
+            #data: data,
           },
         ),
         returnValue: _i4.Future<_i2.AuthResponse>.value(_FakeAuthResponse_0(
@@ -107,10 +101,7 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
             {
               #email: email,
               #password: password,
-              #role: role,
-              #phone: phone,
-              #fullName: fullName,
-              #companyName: companyName,
+              #data: data,
             },
           ),
         )),

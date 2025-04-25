@@ -87,19 +87,18 @@ class TripService {
     
     await _supabase.from('trips').insert(tripData);
     
+    // Return Trip object matching the model constructor
     return Trip(
       id: tripId,
-      transporteurId: transporteurId,
       busId: busId,
       departureCity: departureCity,
-      arrivalCity: arrivalCity,
-      departureDateTime: departureDateTime,
-      arrivalDateTime: arrivalDateTime,
-      fare: fare,
+      destinationCity: arrivalCity,
+      departureTimestamp: departureDateTime,
+      arrivalTimestamp: arrivalDateTime,
+      pricePerSeat: fare,
+      status: 'scheduled',
       totalSeats: capacity,
       availableSeats: capacity,
-      isActive: true,
-      createdAt: DateTime.now(),
     );
   }
 

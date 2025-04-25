@@ -3,7 +3,6 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:samabus/services/auth_service.dart'; // Adjust import path if needed
-import 'package:samabus/models/user.dart' as app_user;
 
 // Generate mocks for Supabase classes
 @GenerateMocks([
@@ -36,11 +35,10 @@ void main() {
 
   // --- Test Group: signUp ---
   group('signUp', () {
-    final testEmail = 'test@example.com';
-    final testPassword = 'password123';
-    final testRole = app_user.UserRole.traveler;
-    final testFullName = 'Test User';
-    final testPhone = '123456789';
+    const testEmail = 'test@example.com';
+    const testPassword = 'password123';
+    const testFullName = 'Test User';
+    const testPhone = '123456789';
     final testMetadata = {
       'role': 'traveler',
       'full_name': testFullName,
@@ -50,36 +48,33 @@ void main() {
     test('should call supabaseClient.auth.signUp with correct parameters', () async {
       // Arrange
       final fakeAuthResponse = AuthResponse(session: null, user: User(id: 'uuid', appMetadata: {}, userMetadata: {}, aud: 'aud', createdAt: DateTime.now().toIso8601String()));
-      when(mockGoTrueClient.signUp(email: anyNamed('email'), password: anyNamed('password'), phone: anyNamed('phone'), data: anyNamed('data')))
+      when(mockGoTrueClient.signUp(email: anyNamed('email'), password: anyNamed('password'), data: anyNamed('data')))
           .thenAnswer((_) async => fakeAuthResponse);
 
-      // Act: Call the service method - uses the injected mock client
+      // Act: Call the service method with email, password, and data map
       await authService.signUp(
         email: testEmail,
         password: testPassword,
-        role: testRole,
-        fullName: testFullName,
-        phone: testPhone,
+        data: testMetadata,
       );
 
       // Assert: Verify mockGoTrueClient.signUp was called with expected args
       verify(mockGoTrueClient.signUp(
         email: testEmail,
         password: testPassword,
-        phone: testPhone,
         data: testMetadata,
       )).called(1);
     });
 
      test('should rethrow AuthException on Supabase signUp failure', () async {
         // Arrange
-        when(mockGoTrueClient.signUp(email: anyNamed('email'), password: anyNamed('password'), phone: anyNamed('phone'), data: anyNamed('data')))
-            .thenThrow(AuthException('Failed to sign up'));
+        when(mockGoTrueClient.signUp(email: anyNamed('email'), password: anyNamed('password'), data: anyNamed('data')))
+            .thenThrow(const AuthException('Failed to sign up'));
 
         // Act & Assert
         expect(
           () async => authService.signUp(
-              email: testEmail, password: testPassword, role: testRole, fullName: testFullName, phone: testPhone),
+              email: testEmail, password: testPassword, data: testMetadata),
           throwsA(isA<AuthException>()),
         );
       });
@@ -88,8 +83,8 @@ void main() {
 
   // --- Test Group: signInWithPassword ---
    group('signInWithPassword', () {
-      final testEmail = 'test@example.com';
-      final testPassword = 'password123';
+      const testEmail = 'test@example.com';
+      const testPassword = 'password123';
 
       test('should call supabaseClient.auth.signInWithPassword with correct parameters', () async {
          // Arrange
@@ -107,7 +102,7 @@ void main() {
        test('should rethrow AuthException on Supabase signIn failure', () async {
           // Arrange
           when(mockGoTrueClient.signInWithPassword(email: anyNamed('email'), password: anyNamed('password')))
-             .thenThrow(AuthException('Invalid login credentials'));
+             .thenThrow(const AuthException('Invalid login credentials'));
 
           // Act & Assert
           expect(
@@ -133,7 +128,7 @@ void main() {
 
   // --- Test Group: sendPasswordResetEmail ---
    group('sendPasswordResetEmail', () {
-      final testEmail = 'test@example.com';
+      const testEmail = 'test@example.com';
       test('should call supabaseClient.auth.resetPasswordForEmail', () async {
          // Arrange
          when(mockGoTrueClient.resetPasswordForEmail(any)).thenAnswer((_) async {});

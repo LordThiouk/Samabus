@@ -7,7 +7,7 @@ import '../../utils/localization.dart';
 import 'passenger_info_screen.dart';
 
 class TripListScreen extends StatelessWidget {
-  const TripListScreen({Key? key}) : super(key: key);
+  const TripListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +114,7 @@ class TripListScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${trip.departureCity} → ${trip.arrivalCity}',
+                          '${trip.departureCity} → ${trip.destinationCity}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -122,7 +122,7 @@ class TripListScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          DateFormat('EEEE, MMMM d').format(trip.departureDateTime),
+                          DateFormat('EEEE, MMMM d').format(trip.departureTimestamp),
                           style: TextStyle(
                             color: Colors.grey[600],
                           ),
@@ -140,7 +140,7 @@ class TripListScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
-                      currencyFormat.format(trip.fare),
+                      currencyFormat.format(trip.pricePerSeat),
                       style: TextStyle(
                         color: Theme.of(context).primaryColor,
                         fontWeight: FontWeight.bold,
@@ -157,7 +157,7 @@ class TripListScreen extends StatelessWidget {
                 children: [
                   _buildTimeColumn(
                     context,
-                    DateFormat('HH:mm').format(trip.departureDateTime),
+                    DateFormat('HH:mm').format(trip.departureTimestamp),
                     localizations.get('departure'),
                     trip.departureCity,
                   ),
@@ -180,11 +180,11 @@ class TripListScreen extends StatelessWidget {
                   ),
                   _buildTimeColumn(
                     context,
-                    trip.arrivalDateTime != null
-                        ? DateFormat('HH:mm').format(trip.arrivalDateTime!)
+                    trip.arrivalTimestamp != null
+                        ? DateFormat('HH:mm').format(trip.arrivalTimestamp!)
                         : '--:--',
                     localizations.get('arrival'),
-                    trip.arrivalCity,
+                    trip.destinationCity,
                     alignment: CrossAxisAlignment.end,
                   ),
                 ],
@@ -199,7 +199,7 @@ class TripListScreen extends StatelessWidget {
                   Text(
                     '${localizations.get('available_seats')}: ${trip.availableSeats}',
                     style: TextStyle(
-                      color: trip.availableSeats < 5 ? Colors.orange[700] : Colors.green[700],
+                      color: (trip.availableSeats ?? 0) < 5 ? Colors.orange[700] : Colors.green[700],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -268,12 +268,14 @@ class TripListScreen extends StatelessWidget {
   }
 
   String _getTripDuration(Trip trip) {
-    if (trip.arrivalDateTime == null) return '';
+    if (trip.arrivalTimestamp == null) {
+      return 'N/A';
+    }
     
-    final duration = trip.arrivalDateTime!.difference(trip.departureDateTime);
+    final duration = trip.arrivalTimestamp!.difference(trip.departureTimestamp);
     final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
+    final minutes = duration.inMinutes.remainder(60);
     
-    return '$hours${hours == 1 ? 'hr' : 'hrs'} $minutes${minutes == 1 ? 'min' : 'mins'}';
+    return '${hours}h ${minutes}m';
   }
 }

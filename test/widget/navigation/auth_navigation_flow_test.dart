@@ -31,7 +31,7 @@ import 'auth_navigation_flow_test.mocks.dart';
       title: 'Test App',
       routerConfig: router,
       // Ensure localization delegates are present if screens use them, even in tests
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

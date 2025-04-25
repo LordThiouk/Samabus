@@ -235,7 +235,7 @@ void main() {
 
    testWidgets('Shows error message when status is error', (WidgetTester tester) async {
      // Arrange
-     final errorMessage = 'Email already exists';
+     const errorMessage = 'Email already exists';
      when(mockAuthProvider.status).thenReturn(AuthStatus.error);
      when(mockAuthProvider.errorMessage).thenReturn(errorMessage);
      await tester.pumpWidget(createSignupScreen(mockAuthProvider: mockAuthProvider));

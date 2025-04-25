@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../models/user.dart' as app_user; // Ensure alias is used for UserRole
 import '../providers/auth_provider.dart';
 import '../providers/auth_status.dart';
@@ -29,21 +28,21 @@ String? appRedirectLogic(BuildContext context, GoRouterState state, AuthProvider
                       currentLoc == ForgotPasswordScreen.routeName;
   final isSplash = currentLoc == '/';
 
-  print('Router Redirect: status=$authStatus, location=$currentLoc, role=$userRole, isAuthRoute=$isAuthRoute, isSplash=$isSplash');
+  // print('Router Redirect: status=$authStatus, location=$currentLoc, role=$userRole, isAuthRoute=$isAuthRoute, isSplash=$isSplash');
 
   // --- Handle Loading States --- //
   if (authStatus == AuthStatus.uninitialized ||
       authStatus == AuthStatus.authenticating ||
       authStatus == AuthStatus.loadingProfile) {
-    print('Redirect: In loading state ($authStatus), staying.');
+    // print('Redirect: In loading state ($authStatus), staying.');
     return null; // Stay on current page (e.g., splash)
   }
 
   // --- Handle Authenticated State (Profile Loaded) --- //
   if (authStatus == AuthStatus.authenticated) {
-    print('Redirect: Authenticated (Profile Loaded), User Role: $userRole');
+    // print('Redirect: Authenticated (Profile Loaded), User Role: $userRole');
     if (userRole == null) {
-      print('Redirect ERROR: Authenticated but role is null! Signing out and redirecting to login.');
+      // print('Redirect ERROR: Authenticated but role is null! Signing out and redirecting to login.');
       Future.microtask(() => authProvider.signOut());
       return LoginScreen.routeName;
     }
@@ -59,15 +58,30 @@ String? appRedirectLogic(BuildContext context, GoRouterState state, AuthProvider
 
   // --- Handle Unauthenticated or Error State --- //
   if (authStatus == AuthStatus.unauthenticated || authStatus == AuthStatus.error) {
-    print('Redirect: Unauthenticated or Error state');
-    if (!isSplash && !isAuthRoute) {
-      print('Redirect: Unauthenticated/Error on protected page ($currentLoc) -> LoginScreen');
+    // print('Redirect: Unauthenticated or Error state');
+    
+    final isAuthRoute = currentLoc == LoginScreen.routeName ||
+                      currentLoc == SignupScreen.routeName ||
+                      currentLoc == ForgotPasswordScreen.routeName;
+    final isSplash = currentLoc == '/';
+
+    // ** NEW: If unauthenticated AND on splash, go to login **
+    if (isSplash) {
+      // print('Redirect: Unauthenticated on Splash -> LoginScreen');
+      return LoginScreen.routeName; 
+    }
+
+    // Original logic: If unauthenticated on a protected page, go to login
+    if (!isAuthRoute) { // No need to check isSplash again here
+      // print('Redirect: Unauthenticated/Error on protected page ($currentLoc) -> LoginScreen');
       return LoginScreen.routeName;
     }
-    return null; // Allow staying on public pages
+    
+    // Allow staying on auth routes if already there
+    return null; 
   }
 
-  print('Redirect: Fallthrough - No condition met, staying on $currentLoc.');
+  // print('Redirect: Fallthrough - No condition met, staying on $currentLoc.');
   return null;
 }
 

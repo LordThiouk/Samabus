@@ -6,8 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import 'config/app_config.dart';
 import 'providers/auth_provider.dart';
-import 'providers/booking_provider.dart';
-import 'providers/trip_provider.dart';
 import 'services/auth_service.dart';
 import 'routes/app_router.dart';
 
@@ -19,7 +17,7 @@ Future<void> main() async {
     url: AppConfig.supabaseUrl,
     anonKey: AppConfig.supabaseAnonKey,
   );
-  
+
   // Get the Supabase client instance *after* initialization
   final SupabaseClient supabaseClient = Supabase.instance.client;
 
@@ -50,7 +48,7 @@ class MyApp extends StatelessWidget {
     // Use MultiProvider to provide AuthProvider and potentially others
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: authProvider), // Provide existing instance
+        ChangeNotifierProvider.value(value: authProvider),
         // TODO: Instantiate and provide other providers if needed
         // ChangeNotifierProvider(create: (_) => BookingProvider()),
         // ChangeNotifierProvider(create: (_) => TripProvider()),

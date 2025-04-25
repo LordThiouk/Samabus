@@ -1,7 +1,9 @@
+import 'dart:async';
+// import '../models/user.dart'; // REMOVE THIS LINE
+import 'package:samabus/models/user.dart' as app_user; // Keep this alias
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/user.dart' show UserRole;
+// import '../models/user.dart' show UserRole; // REMOVE THIS LINE
 // Import the app's User model if needed, potentially with an alias
-import '../models/user.dart' as app_user;
 
 // Abstract class defining the authentication service contract
 abstract class AuthService {
@@ -11,10 +13,7 @@ abstract class AuthService {
   Future<AuthResponse> signUp({
     required String email,
     required String password,
-    required UserRole role,
-    String? phone,
-    String? fullName,
-    String? companyName,
+    required Map<String, dynamic> data,
   });
   Future<AuthResponse> signInWithPassword({
     required String email,
@@ -43,7 +42,7 @@ class AuthServiceImpl implements AuthService {
           .single();
       return response;
     } catch (e) {
-      print('Error fetching profile for user $userId: $e');
+      // print('Error fetching profile for user $userId: $e');
       // Handle potential errors like PostgrestException if user not found or RLS denies access
       return null;
     }
@@ -66,7 +65,7 @@ class AuthServiceImpl implements AuthService {
         final role = app_user.UserRole.values.firstWhere(
           (e) => e.toString().split('.').last == roleString,
            orElse: () {
-             print('Warning: Could not parse role "$roleString" from profile. Defaulting to traveler.');
+             // print('Warning: Could not parse role "$roleString" from profile. Defaulting to traveler.');
              return app_user.UserRole.traveler;
            },
         );
@@ -76,7 +75,7 @@ class AuthServiceImpl implements AuthService {
                            (supabaseUser.phoneConfirmedAt != null && supabaseUser.phoneConfirmedAt!.isNotEmpty);
 
         // Get creation time from Supabase user
-        final createdAt = DateTime.tryParse(supabaseUser.createdAt ?? '') ?? DateTime.now();
+        final createdAt = DateTime.tryParse(supabaseUser.createdAt) ?? DateTime.now();
 
         return app_user.User(
           id: supabaseUser.id,
@@ -89,11 +88,11 @@ class AuthServiceImpl implements AuthService {
           isApproved: profileData['approved'] as bool?,
         );
       } catch (e) {
-         print('Error constructing app_user.User from profile/auth data: $e');
+         // print('Error constructing app_user.User from profile/auth data: $e');
          return null;
       }
     } else {
-      print('Warning: Profile data not found for user ${supabaseUser.id}. Cannot create full App User.');
+      // print('Warning: Profile data not found for user ${supabaseUser.id}. Cannot create full App User.');
       return null;
     }
   }
@@ -107,34 +106,39 @@ class AuthServiceImpl implements AuthService {
   Future<AuthResponse> signUp({
     required String email,
     required String password,
-    required UserRole role,
-    String? phone,
-    String? fullName,
-    String? companyName,
+    required Map<String, dynamic> data,
   }) async {
     try {
-      // Prepare metadata for signup
-      final Map<String, dynamic> userMetadata = {
-        'role': role.toString().split('.').last, // Expects 'traveler', 'transporteur', 'admin'
-        if (fullName != null) 'full_name': fullName,
-        if (phone != null) 'phone': phone,
-        if (companyName != null && role == UserRole.transporteur) 'company_name': companyName, // Check against transporteur
-      };
-
+      // print('AuthService: signUp called with email: $email, data: $data');
+      // Use the data map provided by AuthProvider
       final response = await _supabaseClient.auth.signUp(
         email: email,
         password: password,
-        phone: phone,
-        data: userMetadata,
+        data: data, // Pass the map directly to Supabase
       );
-
-      return response;
+      // print('AuthService: Supabase signUp response received.');
+      
+      // Important: Check if user needs confirmation vs. auto-confirmed
+      if (response.user != null && response.session == null) {
+        // print('AuthService: User needs email confirmation.');
+        // Handle confirmation required state if necessary (e.g., return specific status)
+      } else if (response.user != null && response.session != null) {
+        // print('AuthService: User signed up and logged in (auto-confirm likely on).');
+        // User is immediately logged in (auto-confirm on?)
+      }
+      
+      return response; 
     } on AuthException catch (e) {
-      print('AuthException during sign up: ${e.message}');
+       // print('AuthService: SignUp AuthException - ${e.message}');
+      // Rethrow specific errors if needed or handle them
+      if (e.message.contains('User already registered')) {
+        // Consider custom exception type
+      }
       rethrow;
     } catch (e) {
-      print('Error during sign up: $e');
-      rethrow;
+       // print('AuthService: SignUp Unknown Error - $e');
+      // Wrap unknown errors
+      throw Exception('An unexpected error occurred during sign up: $e');
     }
   }
 
@@ -152,7 +156,7 @@ class AuthServiceImpl implements AuthService {
       // if the Edge Function worked correctly during signup.
       return response;
     } catch (e) {
-      print('Error during sign in: $e');
+      // print('Error during sign in: $e');
       rethrow;
     }
   }
@@ -162,7 +166,7 @@ class AuthServiceImpl implements AuthService {
     try {
       await _supabaseClient.auth.signOut();
     } catch (e) {
-      print('Error during sign out: $e');
+      // print('Error during sign out: $e');
       rethrow;
     }
   }
@@ -172,7 +176,7 @@ class AuthServiceImpl implements AuthService {
     try {
       await _supabaseClient.auth.resetPasswordForEmail(email);
     } catch (e) {
-      print('Error sending password reset email: $e');
+      // print('Error sending password reset email: $e');
       rethrow;
     }
   }
